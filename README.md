@@ -1,4 +1,4 @@
-# DashMoney Wallet Web Frontend
+# DashMoney Wallet (Web) Frontend
 
 ## React + Vite
 
@@ -14,6 +14,7 @@
 
 - VITE_FRONTEND_NAME = DashMoney
 - VITE_BKGD = dark
+- VITE_NETWORK = testnet
 
 _Frontend Name is what will appear in the top of page navigation bar._
 _BKGD is 'Background' which can be dark or primary_
