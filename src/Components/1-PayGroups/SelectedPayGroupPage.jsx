@@ -36,6 +36,7 @@ class SelectedPayGroupPage extends React.Component {
     // Put the Logic Here and NOT in the App.js Functions
     let isInitialMsgDoc = false;
     let chatMsgs = [];
+    let sharedChatKey;
 
     //OrderChatDocs
 
@@ -48,14 +49,17 @@ class SelectedPayGroupPage extends React.Component {
       isInitialMsgDoc = true;
     } else {
       //Decrypt DocKey ->
-      let sharedChatKey = DocKeyDecrypt(
+      sharedChatKey = DocKeyDecrypt(
         yourChatDoc.docKey,
         yourChatDoc.timeIndex,
         this.props.mnemonic
       );
 
+      //console.log(sharedChatKey);
+
       //Get Encrypted Msgs ->
       let encryptedMsgs = [];
+
       this.props.selectedPayGroupChatDocs.forEach((doc) => {
         if (doc.msg1 !== "") {
           encryptedMsgs.push([doc.$ownerId, doc.msg1]);
@@ -75,10 +79,14 @@ class SelectedPayGroupPage extends React.Component {
       //   owner: this.props.req.$ownerId, <- NOT this one
       // }
       //ADD isError ->
+
+      //NEED TO ADD MSGS BEFORE CAN DECRYPT.
       chatMsgs = DecryptChatMsgs(encryptedMsgs, sharedChatKey).flat();
+
+      console.log("chatMsgs: ", chatMsgs);
     }
 
-    //Search through ChatDocs returned.
+    //Search through msgObjs returned.
 
     return (
       <>
@@ -162,8 +170,10 @@ class SelectedPayGroupPage extends React.Component {
               {!this.props.isLoadingPayGroupMsgs && !isInitialMsgDoc ? (
                 <>
                   <SelectedPayGroupMsgs
+                    uniqueName={this.props.uniqueName}
                     today={today}
                     yesterday={yesterday}
+                    identity={this.props.identity}
                     chatMsgs={chatMsgs}
                     selectedPayGroupNameDocs={
                       this.props.selectedPayGroupNameDocs
@@ -176,6 +186,7 @@ class SelectedPayGroupPage extends React.Component {
                       showAddMessageToChatDocModal={
                         this.props.showAddMessageToChatDocModal
                       }
+                      theSharedSecret={sharedChatKey}
                     />
                   }
 

@@ -1,5 +1,6 @@
 import React from "react";
 import Card from "react-bootstrap/Card";
+import formatDate from "../TimeDisplayLong";
 
 class SelectedPayGroupMsgs extends React.Component {
   constructor(props) {
@@ -57,7 +58,7 @@ class SelectedPayGroupMsgs extends React.Component {
     messages = orderedMsgs.map((msg, index) => {
       if (msg.owner === this.props.identity) {
         return (
-          <div index={index} key={index} style={{ paddingLeft: "1rem" }}>
+          <div index={index} key={index} style={{ paddingLeft: "2rem" }}>
             <div
               //className="BottomThinBorder"
               className="ThreadBorder"
@@ -76,7 +77,7 @@ class SelectedPayGroupMsgs extends React.Component {
         );
       } else {
         return (
-          <div index={index} key={index}>
+          <div index={index} key={index} style={{ paddingRight: "2rem" }}>
             <div
               //className="BottomThinBorder"
               className="ThreadBorder"

@@ -53,6 +53,12 @@ import DocKeyEncrypt from "./Components/1-PayGroups/Encrypt&Decrypt/DocKeyEncryp
 
 import DocKeyDecrypt from "./Components/1-PayGroups/Encrypt&Decrypt/DocKeyDecrypt";
 
+import DecryptChatForMbrs from "./Components/1-PayGroups/Encrypt&Decrypt/DecryptChatForMbrs";
+
+import DecryptChatDoc4Edit from "./Components/1-PayGroups/Encrypt&Decrypt/DecryptChatDoc4Edit";
+
+import EncryptChatDoc4Edit from "./Components/1-PayGroups/Encrypt&Decrypt/EncryptChatDoc4Edit";
+
 import ConfirmCreatePayGroupModal from "./Components/1-PayGroups/Modals/ConfirmCreatePayGroupModal";
 
 import ConfirmJoinPayGroupModal from "./Components/1-PayGroups/Modals/ConfirmJoinPayGroupModal";
@@ -195,8 +201,12 @@ class App extends React.Component {
       selectedPayGroupChatDocs: [],
 
       InitialPullPayGroupMsgs: true,
-
       isPayGroupsMsgsRefreshReady: true,
+
+      sharedSecret: "",
+      messageToAdd: "",
+      chatDocToEdit: "",
+      chatDocToEditIndex: 0,
 
       //PAY GROUPS PAGE STATE^^^^^
 
@@ -1490,10 +1500,11 @@ class App extends React.Component {
           // console.log(`There are no ${theNumOfMbrs}`);
           return [];
         } else {
+          let isDecodeError = false;
           let docArray = [];
           for (const n of d) {
             let returnedDoc = n.toJSON();
-            console.log("MbrDoc:\n", returnedDoc);
+            //console.log("MbrDoc:\n", returnedDoc);
 
             returnedDoc.payGroupId = Identifier.from(
               returnedDoc.payGroupId,
@@ -1501,6 +1512,16 @@ class App extends React.Component {
             ).toJSON();
 
             returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
+
+            //DECRYPT dATA TO tEST -> sat
+
+            let DecryptedFromMbrs = DocKeyDecrypt(
+              returnedDoc.fromMbrs,
+              returnedDoc.timeIndex,
+              this.state.mnemonic
+            );
+
+            console.log("DecryptedFromMbrs: ", DecryptedFromMbrs);
 
             // if (returnedDoc.fromMbrs !== "") {
             //   returnedDoc.fromMbrs = JSON.parse(returnedDoc.fromMbrs);
@@ -1558,7 +1579,7 @@ class App extends React.Component {
         standInDoc.$type = `mbrs${pgDoc.mbrsList.length + 1}Doc`;
         standInDoc.payGroupId = pgDoc.payGroupId;
         //
-        console.log("standInDoc: ", standInDoc);
+        //console.log("standInDoc: ", standInDoc);
         //
         joinAndInitialMbrDocs.push(standInDoc);
       } else {
@@ -1779,7 +1800,7 @@ class App extends React.Component {
         let pubKeyDocArray = [];
 
         for (const n of d) {
-          console.log("PubKeyDoc:\n", n.toJSON());
+          // console.log("PubKeyDoc:\n", n.toJSON());
 
           pubKeyDocArray = [n.toJSON(), ...pubKeyDocArray];
         }
@@ -2150,7 +2171,7 @@ class App extends React.Component {
       console.log("HDxPublicKey", xPublicKey);
 
       // TEST of DashMoney3 to BurgerJoint3: SAT
-      
+
       //Should also just get private key here as well -> no this one is repeating but unrelated
 
       //ECDHxEncrypt(thePackage,theECDHxDocArray,yourECDHxDoc,  theTimeIndex,theMnemonic,//whichNetwork)
@@ -2374,7 +2395,7 @@ class App extends React.Component {
       console.log("HDxPublicKey", xPublicKey);
 
       // TEST of BurgerJoint3 to DashMoney3: -> SAT
-     
+
       //Should also just get private key here as well -> no this one is repeating but unrelated
 
       //ECDHxEncrypt(thePackage,theECDHxDocArray,yourECDHxDoc,  theTimeIndex,theMnemonic,//whichNetwork)
@@ -2500,15 +2521,16 @@ class App extends React.Component {
         isModalShowing: true,
       });
     } else {
-      this.setState(
-        {
-          isLoadingPayGroupMsgs: true,
-          //isLoadingPayGroups: true,
-          isModalShowing: false,
-          selectedDapp: "PayGroup",
-        },
-        () => this.getPayGroupMsgs()
-      );
+      this.setState({
+        selectedPayGroupDoc: thePayGroupDoc,
+        selectedPayGroupNameDocs: theNameDocs,
+        selectedPayGroupMbrDocs: theMbrDocs,
+        selectedPayGroupECDHDocs: thePubKeyDocs,
+        isLoadingPayGroupMsgs: true,
+        //isLoadingPayGroups: true,
+        isModalShowing: false,
+        selectedDapp: "PayGroup",
+      });
     }
   };
 
@@ -2608,7 +2630,7 @@ class App extends React.Component {
 
       console.log("decryptedFromMbrs: ", decryptedFromMbrs);
 
-      decryptedFromMbrs = decryptedFromMbrs[0];
+      decryptedFromMbrs = decryptedFromMbrs[0]; //removes isError at [1]
 
       //Encrypt (path4 )
       //DocKeyEncrypt(thePackage, theTimeIndex,theMnemonic)
@@ -2741,12 +2763,13 @@ class App extends React.Component {
   };
 
   //Go back Function -> Dapp and Group and can't click back until loading is done? ->
-  //selectedDapp, controlBackArrow - loading state,
+  //selectedDapp, controlBackArrow - loading state, and initial query
 
   handlePayGroupBackArrow = () => {
     this.setState({
       selectedDapp: "Pay Groups",
       isLoadingPayGroupMsgs: true,
+      InitialPullPayGroupMsgs: true,
     });
   };
 
@@ -2827,18 +2850,15 @@ class App extends React.Component {
 
           for (const n of d) {
             let returnedDoc = n.toJSON();
-            //console.log("Req:\n", returnedDoc);
+            //console.log("ChatDoc:\n", returnedDoc);
             returnedDoc.payGroupId = Identifier.from(
               returnedDoc.payGroupId,
               "base64"
             ).toJSON();
 
             // // returnedDoc.msgObject = JSON.parse(returnedDoc.msgObject);
-            //console.log("newReq:\n", returnedDoc);
-            // docArray = [...docArray, returnedDoc];
-            // if (returnedDoc.toId === returnedDoc.forId) {
-            //   docArray = [...docArray, returnedDoc];
-            // }
+            console.log("chatDoc:\n", returnedDoc);
+
             docArray.push(returnedDoc);
           }
           //DocKeyDecrypt
@@ -2905,7 +2925,7 @@ class App extends React.Component {
               "base64"
             ).toJSON();
 
-            // // returnedDoc.msgObject = JSON.parse(returnedDoc.msgObject);
+            returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
             //console.log("newReq:\n", returnedDoc);
             // docArray = [...docArray, returnedDoc];
             // if (returnedDoc.toId === returnedDoc.forId) {
@@ -2916,17 +2936,37 @@ class App extends React.Component {
 
           //search - filter not find..and get the
           let doYouHaveAChatDoc = false;
+
           let yourChatDoc = docArray.find((x) => {
             return x.$ownerId === this.state.identity;
           });
 
           if (yourChatDoc === undefined) {
+            //orderfirst to last ->
+            let firstChatDoc;
+
+            // //need to order the MSGS ->
+            if (docArray.length === 1) {
+              firstChatDoc = docArray[0];
+            } else {
+              let orderedChatDocs = docArray.sort(function (a, b) {
+                return a.$createdAt - b.$createdAt; //returns smallest number first
+              });
+              firstChatDoc = orderedChatDocs[0];
+            }
+
+            console.log("firstChatDoc: ", firstChatDoc);
+
+            // if (firstChatDoc.forMbrs === "") {
+            //   firstChatDoc = orderedChatDocs[1]; // This is not sufficient
+            // }
+
             this.setState(
               {
                 selectedPayGroupChatDocs: docArray,
                 // isLoadingPayGroupMsgs: false,
               },
-              () => this.createNotFirstPayGroupsMsgs()
+              () => this.createNotFirstPayGroupsMsgs(firstChatDoc)
             );
           } else {
             this.setState({
@@ -3019,6 +3059,24 @@ class App extends React.Component {
         // this.state.whichNetwork
       );
 
+      //*** Below - not necessary just to TEST*/
+
+      // let decryptedFromMbrs = ECDHxDecrypt(
+      //   mbrsEncryptedTuples, //this is an array of encrypted data
+      //   this.state.selectedPayGroupECDHDocs, //ordered from thePackage array
+      //   this.state.YourPayGroupsPubKeyDoc,
+
+      //   this.state.mnemonic
+      //   //whichNetwork
+      // );
+      //cATCH HERE IF AN ERROR IS TRIGGERED -> NOT XPUB DECRYPTED
+
+      //console.log("decryptedFromMbrs: ", decryptedFromMbrs);
+
+      //decryptedFromMbrs = decryptedFromMbrs[0]; //removes isError at [1]
+
+      //*** */
+
       //ENCRYPT DOCKEY ->
       //DocKeyEncrypt(thePackage,theTimeIndex,theMnemonic)
 
@@ -3027,6 +3085,16 @@ class App extends React.Component {
         truncatedTimeStamp,
         this.state.mnemonic
       );
+
+      //DECRYPT dATA TO tEST ->
+
+      // let DecryptedFromMbrs = DocKeyDecrypt(
+      //   encryptedForMbrs,
+      //   this.state.selectedPayGroupDoc.timeIndex,
+      //   this.state.mnemonic
+      // );
+
+      // console.log("ChatDoc-DecryptedFromMbrs: ", DecryptedFromMbrs);
 
       // ***   ***   ***   ***   ***
       // ***   ***   ***   ***
@@ -3057,18 +3125,18 @@ class App extends React.Component {
       //############################################################
       //This below disconnects the document sending..***
 
-      return PayGroupDocument;
+      //return PayGroupDocument;
 
       //This is to disconnect the Document Creation***
 
       //############################################################
 
-      // const documentBatch = {
-      //   create: [PayGroupDocument], // Document(s) to create
-      // };
+      const documentBatch = {
+        create: [PayGroupDocument], // Document(s) to create
+      };
 
-      // await platform.documents.broadcast(documentBatch, identity);
-      // return PayGroupDocument;
+      await platform.documents.broadcast(documentBatch, identity);
+      return PayGroupDocument;
     };
 
     submitDocument()
@@ -3106,8 +3174,8 @@ class App extends React.Component {
       .finally(() => client.disconnect());
   };
 
-  createNotFirstPayGroupsMsgs = (theFirstMsgChatDoc) => {
-    //console.log("Called Create Pay Group Mbr Doc");
+  createNotFirstPayGroupsMsgs = (theFirstChatDoc) => {
+    console.log("Called Create Not First ChatDoc");
 
     const client = new Dash.Client(
       dapiClient(
@@ -3146,26 +3214,36 @@ class App extends React.Component {
       //   //`m/2147483647` <- LIMIT, will hit in 68 years
       let truncatedTimeStamp = new String(timeStamp).slice(0, -3);
 
-      //Decrypt All ECDH
-
+      //Decrypt All ECDH - no
       // I JUST NEED TO DECRYPT CHATDOC!!
 
-      //theFirstMsgChatDoc
+      //so there is only one chatDoc that is giving the encrypted data to all the other mbrs. so this is much simpler than the pubkey exchange.
+
+      //theFirstChatDoc
 
       //GET ENCRYPTED DATA FROM OTHER MBRS DOCS -> ORDER BY TUPLES(OWNERiD&DATA)
+      let chatStarter = this.state.selectedPayGroupMbrDocs.find((mbrDoc) => {
+        return mbrDoc.$ownerId === theFirstChatDoc.$ownerId;
+      });
 
-      let mbrsEncryptedTuples = [];
+      let chatStarterECDHDoc = this.state.selectedPayGroupECDHDocs.find(
+        (mbrDoc) => {
+          return mbrDoc.$ownerId === theFirstChatDoc.$ownerId;
+        }
+      );
 
-      this.state.selectedPayGroupMbrDocs.forEach((mbrDoc) => {
-        let mbrNum = parseInt(mbrDoc.$type.slice(4, 5));
+      let forYouEncryptedPwd;
+
+      if (chatStarter !== undefined) {
+        let mbrNum = parseInt(chatStarter.$type.slice(4, 5));
 
         let ownerArrayOfMbrIds = [];
 
         if (mbrNum === 1) {
-          ownerArrayOfMbrIds = [...mbrDoc.mbrsList];
+          ownerArrayOfMbrIds = [...chatStarter.mbrsList];
         } else {
           for (let i = 2; i <= mbrNum; i++) {
-            ownerArrayOfMbrIds.push(mbrDoc[`mbr${i}`]);
+            ownerArrayOfMbrIds.push(chatStarter[`mbr${i}`]);
           }
         }
 
@@ -3173,33 +3251,21 @@ class App extends React.Component {
           (x) => x === this.state.identity
         );
 
-        mbrsEncryptedTuples.push([mbrDoc.$ownerId, mbrDoc.forMbrs[yourIndex]]);
-      });
+        forYouEncryptedPwd = theFirstChatDoc.forMbrs[yourIndex];
 
-      console.log("mbrsEncryptedTuples: ", mbrsEncryptedTuples);
+        console.log("forYouEncryptedPwd: ", forYouEncryptedPwd);
+      }
 
-      //generate a list of each mbrDoc
-      //determine the index that yourIdentity is
-      // pull that index for the forMbrs and add to the
-
-      //maybe add a mbrList to all the mbr#Docs?? ->
-
-      // they used mypubKey and their privkey
-      // I need my (privKey && theirECDHkey)
-
-      let decryptedFromMbrs = ECDHxDecrypt(
-        mbrsEncryptedTuples, //this is an array of encrypted data
-        this.state.selectedPayGroupECDHDocs, //ordered from thePackage array
+      let decryptedFromMbrs = DecryptChatForMbrs(
+        forYouEncryptedPwd,
+        chatStarterECDHDoc,
         this.state.YourPayGroupsPubKeyDoc,
-
         this.state.mnemonic
         //whichNetwork
       );
       //cATCH HERE IF AN ERROR IS TRIGGERED -> NOT XPUB DECRYPTED
 
       console.log("decryptedFromMbrs: ", decryptedFromMbrs);
-
-      decryptedFromMbrs = decryptedFromMbrs[0];
 
       // ***   ***   ***   ***   ***
       // ***   ***   ***   ***
@@ -3208,10 +3274,20 @@ class App extends React.Component {
       //DocKeyEncrypt(thePackage,theTimeIndex,theMnemonic)
 
       let encryptedDocKey = DocKeyEncrypt(
-        docKey,
+        decryptedFromMbrs, //this is the docKey
         truncatedTimeStamp,
         this.state.mnemonic
       );
+
+      //DECRYPT dATA TO tEST ->
+
+      // let DecryptedFromMbrs = DocKeyDecrypt(
+      //   encryptedForMbrs,
+      //   this.state.selectedPayGroupDoc.timeIndex,
+      //   this.state.mnemonic
+      // );
+
+      // console.log("ChatDoc-DecryptedFromMbrs: ", DecryptedFromMbrs);
 
       // ***   ***   ***   ***   ***
       // ***   ***   ***   ***
@@ -3228,7 +3304,7 @@ class App extends React.Component {
         msg3: "",
       };
 
-      console.log("docProperties: ", docProperties);
+      //console.log("docProperties: ", docProperties);
 
       //DocKey encrypt the fromMbrs with timeIndex -> not yet.
 
@@ -3244,34 +3320,44 @@ class App extends React.Component {
       //############################################################
       //This below disconnects the document sending..***
 
-      return PayGroupDocument;
+      //return PayGroupDocument;
 
       //This is to disconnect the Document Creation***
 
       //############################################################
 
-      // const documentBatch = {
-      //   create: [PayGroupDocument], // Document(s) to create
-      // };
+      const documentBatch = {
+        create: [PayGroupDocument], // Document(s) to create
+      };
 
-      // await platform.documents.broadcast(documentBatch, identity);
-      // return PayGroupDocument;
+      await platform.documents.broadcast(documentBatch, identity);
+      return PayGroupDocument;
     };
 
     submitDocument()
       .then((d) => {
         let returnedDoc = d.toJSON();
 
-        console.log("MbrDocument:\n", returnedDoc);
+        //console.log("MbrDocument:\n", returnedDoc);
 
-        //this.handleRefresh_PayGroups();
+        returnedDoc.payGroupId = Identifier.from(
+          returnedDoc.payGroupId,
+          "base64"
+        ).toJSON();
 
-        // returnedDoc.payGroupId = Identifier.from(
-        //   returnedDoc.payGroupId,
-        //   "base64"
-        // ).toJSON();
+        console.log("returnedChatDoc:\n", returnedDoc);
 
-        // console.log("MbrDocument:\n", returnedDoc);
+        this.setState(
+          {
+            selectedPayGroupChatDocs: [
+              returnedDoc,
+              ...this.state.selectedPayGroupChatDocs,
+            ],
+
+            isLoadingPayGroupMsgs: false,
+          }
+          //() => this.handleRefresh_PayGroups()
+        );
       })
       .catch((e) => {
         this.setState({
@@ -3288,7 +3374,7 @@ class App extends React.Component {
 
   //I can't decrypt Other msgs untill I have a msgs, when at least not till I decrypt the first msg
 
-  showAddMessageToChatDocModal = (theMessage) => {
+  showAddMessageToChatDocModal = (theMessage, theSharedSecret) => {
     //Need to find the latest ChatDoc -> filter and then sort and let the earliest
     let yourChatDocs = this.state.selectedPayGroupChatDocs.filter((x) => {
       return x.$ownerId === this.state.identity;
@@ -3306,6 +3392,7 @@ class App extends React.Component {
       return chat.$id === yourLatestChatDoc.$id;
     });
     this.setState({
+      sharedSecret: theSharedSecret,
       messageToAdd: theMessage,
       chatDocToEdit: yourLatestChatDoc,
       chatDocToEditIndex: chatDocIndex, //<- Need this for the editingfunction!!
@@ -3333,24 +3420,38 @@ class App extends React.Component {
 
     let theTime = Date.now();
 
-    let theMsgObject = [];
+    theTime = new String(theTime).slice(0, -3);
 
-    theMsgObject = [
-      {
-        msg: this.state.messageToAdd,
-        time: theTime,
-      },
-    ];
-
-    let propsToEncrypt = {
-      //msgs: [...theMsgObject, ...this.state.responseToEdit.msgObject],
+    let theMsgObject = {
+      msg: this.state.messageToAdd,
+      time: theTime,
     };
+    let msgArrayToDecrypt;
+    let decryptedMsgArray = [];
 
-    console.log("propsToEncrypt: ", propsToEncrypt);
+    if (this.state.chatDocToEdit.msg1 !== "") {
+      msgArrayToDecrypt = this.state.chatDocToEdit.msg1;
+
+      decryptedMsgArray = DecryptChatDoc4Edit(
+        msgArrayToDecrypt,
+        this.state.sharedSecret
+      );
+
+      decryptedMsgArray = JSON.parse(decryptedMsgArray);
+    }
+
+    decryptedMsgArray.push(theMsgObject);
+
+    console.log("MsgArrayToEncrypt: ", decryptedMsgArray);
 
     //SEND OBJECT TO ENCRYPT ->
 
-    let encryptedChatDoc = DocKeyEncrypt();
+    let encrypted4ChatDoc = EncryptChatDoc4Edit(
+      JSON.stringify(decryptedMsgArray),
+      this.state.sharedSecret
+    );
+
+    console.log("encrypted4ChatDoc: ", encrypted4ChatDoc);
 
     // *** *** ***
 
@@ -3365,29 +3466,23 @@ class App extends React.Component {
       }
 
       const [document] = await client.platform.documents.get(
-        "PayGroupsContract.ChatDoc",
+        "PayGroupsContract.chatDoc",
         {
-          where: [["$id", "==", this.state.responseToEdit.$id]],
+          where: [["$id", "==", this.state.chatDocToEdit.$id]],
         }
       );
 
       //CHANGE THE DOCUMENT.SET ->
 
-      if (addedMessage !== "") {
-        document.set(
-          "resp",
-          Buffer.from(encryptedProps.resp).toString("base64")
-        );
-        document.set("fromResp", encryptedProps.fromResp);
-      }
+      document.set("msg1", encrypted4ChatDoc);
 
-      await platform.documents.broadcast({ replace: [document] }, identity);
-      return document;
+      // await platform.documents.broadcast({ replace: [document] }, identity);
+      // return document;
 
       //############################################################
       //This below disconnects the document editing..***
 
-      //return document;
+      return document;
 
       //This is to disconnect the Document editing***
       //############################################################

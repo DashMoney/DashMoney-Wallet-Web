@@ -1,4 +1,6 @@
 import React from "react";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
 
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
@@ -64,7 +66,10 @@ class SelectedPayGroupForm extends React.Component {
   };
 
   handleSubmitClick = () => {
-    this.props.showAddMessageToChatDocModal(this.state.commentInput);
+    this.props.showAddMessageToChatDocModal(
+      this.state.commentInput,
+      this.props.theSharedSecret
+    );
     console.log("Submitted Msg");
   };
 
@@ -74,46 +79,50 @@ class SelectedPayGroupForm extends React.Component {
         {/* Form */}
         {/* <div className="bodytext"> */}
         <div className="bootstrapMenu">
-          <Form.Group
-            className="mb-1"
-            controlId="formComment"
-            style={{ width: "40%" }}
-          >
-            <Form.Control
-              onChange={this.onChange}
-              //onSubmit={this.handleSubmitClick}
-              as="textarea"
-              rows={2}
-              placeholder="Enter message here..."
-              required
-              isInvalid={this.state.tooLongCommentError}
-              isValid={this.state.validDescription}
-            />
+          <Row className="justify-content-md-center">
+            <Col>
+              <Form.Group
+                className="mb-1"
+                controlId="formComment"
+                style={{ width: "115%" }}
+              >
+                <Form.Control
+                  onChange={this.onChange}
+                  //onSubmit={this.handleSubmitClick}
+                  as="textarea"
+                  rows={2}
+                  placeholder="Enter message here..."
+                  required
+                  isInvalid={this.state.tooLongCommentError}
+                  isValid={this.state.validDescription}
+                />
 
-            {this.state.tooLongCommentError ? (
-              <Form.Control.Feedback className="floatLeft" type="invalid">
-                Sorry, this is too long! Please use less than 450 characters.
-              </Form.Control.Feedback>
-            ) : (
-              <></>
-            )}
-            <p></p>
-            <div className="ButtonRightNoUnderline">
-              {this.state.commentInput !== "" &&
-              !this.state.tooLongCommentError ? (
-                <Button
-                  variant="primary"
-                  onClick={() => this.handleSubmitClick()}
-                >
-                  <b>Send Message</b>
-                </Button>
+                <p></p>
+                <div className="ButtonRightNoUnderline">
+                  {this.state.commentInput !== "" &&
+                  !this.state.tooLongCommentError ? (
+                    <Button
+                      variant="primary"
+                      onClick={() => this.handleSubmitClick()}
+                    >
+                      <b>Send Message</b>
+                    </Button>
+                  ) : (
+                    <Button variant="primary" disabled>
+                      <b>Send Message</b>
+                    </Button>
+                  )}
+                </div>
+              </Form.Group>
+              {this.state.tooLongCommentError ? (
+                <Form.Control.Feedback className="floatLeft" type="invalid">
+                  Sorry, this is too long! Please use less than 450 characters.
+                </Form.Control.Feedback>
               ) : (
-                <Button variant="primary" disabled>
-                  <b>Send Message</b>
-                </Button>
+                <></>
               )}
-            </div>
-          </Form.Group>
+            </Col>
+          </Row>
         </div>
 
         {/* {this.state.isLoadingVerify ||

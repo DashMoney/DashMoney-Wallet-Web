@@ -9,9 +9,8 @@ class ConfirmAddMessageModal extends React.Component {
   };
 
   handleAddMessagetoGroupChat = () => {
-    //this.props.editAddMessageToChatDoc();
-    console.log("disconnected");
-    this.props.closeTopNav();
+    this.props.editAddMessageToChatDoc();
+    //this.props.closeTopNav();
     this.props.hideModal();
   };
 
@@ -40,7 +39,9 @@ class ConfirmAddMessageModal extends React.Component {
         </Modal.Header>
         <Modal.Body>
           <div className="bodytext">
-            <p>Text to add goes here</p>
+            <p>
+              <b>{this.props.messageToAdd}</b>
+            </p>
           </div>
           {/* Enabling <b>Pay Groups</b> will allow you to form multisigs and
           private group chats with others on Dash Platform. */}

@@ -35,6 +35,8 @@ export default function DecryptChatMsgs(
   theEncryptedMsgsArrayOfTuples.forEach((x) => {
     let decryptedData = AES.decrypt(x[1], theDocKey);
 
+    let decryptedParsedData = JSON.parse(decryptedData.toString(enc.Utf8));
+
     //msg should be Array of Objects
     // {
     //   msg: msg.msg,
@@ -42,13 +44,14 @@ export default function DecryptChatMsgs(
     //   owner: this.props.req.$ownerId, <- NOT this one
     // }
 
-    decryptedData.forEach((msgObj) => {
+    decryptedParsedData.forEach((msgObj) => {
       msgObj.owner = x[0];
+      msgObj.time = msgObj.time * 1000;
     });
 
     // console.log("decryptedData: ", decryptedData.toString(enc.Utf8));
 
-    decryptedMsgs.push(decryptedData.toString(enc.Utf8));
+    decryptedMsgs.push(decryptedParsedData);
   });
 
   return decryptedMsgs;
