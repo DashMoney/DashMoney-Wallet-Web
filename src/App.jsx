@@ -65,9 +65,11 @@ import ConfirmJoinPayGroupModal from "./Components/1-PayGroups/Modals/ConfirmJoi
 
 import SelectedPayGroupPage from "./Components/1-PayGroups/SelectedPayGroupPage";
 
+import SelectedPayGroupPmts from "./Components/1-PayGroups/SelectedPayGroupPmts";
+
 import ConfirmFinalizePayGroupModal from "./Components/1-PayGroups/Modals/ConfirmFinalizePayGroupModal";
 
-import ComingSoonModal from "./Components/1-PayGroups/Modals/ComingSoonModal";
+// import ComingSoonModal from "./Components/1-PayGroups/Modals/ComingSoonModal";
 
 import ConfirmAddMessageModal from "./Components/1-PayGroups/Modals/ConfirmAddMessageModal";
 
@@ -2764,12 +2766,14 @@ class App extends React.Component {
 
   //Go back Function -> Dapp and Group and can't click back until loading is done? ->
   //selectedDapp, controlBackArrow - loading state, and initial query
+  // AND clear msgs!! ->
 
   handlePayGroupBackArrow = () => {
     this.setState({
       selectedDapp: "Pay Groups",
       isLoadingPayGroupMsgs: true,
       InitialPullPayGroupMsgs: true,
+      selectedPayGroupChatDocs: [],
     });
   };
 
@@ -2857,20 +2861,31 @@ class App extends React.Component {
             ).toJSON();
 
             // // returnedDoc.msgObject = JSON.parse(returnedDoc.msgObject);
-            console.log("chatDoc:\n", returnedDoc);
+            //console.log("chatDoc:\n", returnedDoc);
 
             docArray.push(returnedDoc);
           }
           //DocKeyDecrypt
 
-          this.setState({
-            selectedPayGroupChatDocs: docArray,
-            isLoadingPayGroupMsgs: false,
-          });
+          this.setState(
+            {
+              selectedPayGroupChatDocs: docArray,
+              isLoadingPayGroupMsgs: false,
+            },
+            () => this.scrollToBottom()
+          );
         }
       })
       .catch((e) => console.error("Something went wrong:\n", e))
       .finally(() => client.disconnect());
+  };
+
+  scrollToBottom = () => {
+    this.messagesEnd.scrollIntoView({
+      behavior: "smooth", //"instant",
+      block: "start",
+      inline: "nearest",
+    });
   };
 
   decideStartOrNotPayGroupsMsgs = () => {
@@ -2924,8 +2939,10 @@ class App extends React.Component {
               returnedDoc.payGroupId,
               "base64"
             ).toJSON();
+            if (returnedDoc.forMbrs !== "") {
+              returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
+            }
 
-            returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
             //console.log("newReq:\n", returnedDoc);
             // docArray = [...docArray, returnedDoc];
             // if (returnedDoc.toId === returnedDoc.forId) {
@@ -3476,13 +3493,13 @@ class App extends React.Component {
 
       document.set("msg1", encrypted4ChatDoc);
 
-      // await platform.documents.broadcast({ replace: [document] }, identity);
-      // return document;
+      await platform.documents.broadcast({ replace: [document] }, identity);
+      return document;
 
       //############################################################
       //This below disconnects the document editing..***
 
-      return document;
+      //return document;
 
       //This is to disconnect the Document editing***
       //############################################################
@@ -3501,7 +3518,7 @@ class App extends React.Component {
 
         let editedChatDocs = this.state.selectedPayGroupChatDocs;
 
-        editedChatDocs.splice(this.state.chatDocToEdit, 1, returnedDoc);
+        editedChatDocs.splice(this.state.chatDocToEditIndex, 1, returnedDoc);
 
         this.setState(
           {
@@ -6649,7 +6666,7 @@ class App extends React.Component {
                 mode={this.state.mode}
                 showModal={this.showModal}
                 showAddMessageToChatDocModal={this.showAddMessageToChatDocModal}
-                //handleSelectedDapp={this.handleSelectedDapp}
+                handleSelectedDapp={this.handleSelectedDapp}
                 handlePayGroupBackArrow={this.handlePayGroupBackArrow}
                 //
                 pullInitialTriggerPAYGROUPMSGS={
@@ -6662,6 +6679,44 @@ class App extends React.Component {
                 decideStartOrNotPayGroupsMsgs={
                   this.decideStartOrNotPayGroupsMsgs
                 }
+                //
+                selectedPayGroupDoc={this.state.selectedPayGroupDoc}
+                selectedPayGroupNameDocs={this.state.selectedPayGroupNameDocs}
+                selectedPayGroupMbrDocs={this.state.selectedPayGroupMbrDocs}
+                selectedPayGroupECDHDocs={this.state.selectedPayGroupECDHDocs}
+                selectedPayGroupChatDocs={this.state.selectedPayGroupChatDocs}
+                //
+              />
+            </>
+          ) : (
+            <></>
+          )}
+
+          {this.state.selectedDapp === "PayGroupPmts" ? (
+            <>
+              <SelectedPayGroupPmts
+                isLoadingPayGroups={this.state.isLoadingPayGroups}
+                isLoadingPayGroupMsgs={this.state.isLoadingPayGroupMsgs}
+                mnemonic={this.state.mnemonic}
+                identity={this.state.identity}
+                identityInfo={this.state.identityInfo}
+                uniqueName={this.state.uniqueName}
+                mode={this.state.mode}
+                showModal={this.showModal}
+                showAddMessageToChatDocModal={this.showAddMessageToChatDocModal}
+                handleSelectedDapp={this.handleSelectedDapp}
+                //handlePayGroupBackArrow={this.handlePayGroupBackArrow}
+                //
+                // pullInitialTriggerPAYGROUPMSGS={
+                //   this.pullInitialTriggerPAYGROUPMSGS
+                // }
+                // isPayGroupsMsgsRefreshReady={
+                //   this.state.isPayGroupsMsgsRefreshReady
+                // }
+                //
+                // decideStartOrNotPayGroupsMsgs={
+                //   this.decideStartOrNotPayGroupsMsgs
+                // }
                 //
                 selectedPayGroupDoc={this.state.selectedPayGroupDoc}
                 selectedPayGroupNameDocs={this.state.selectedPayGroupNameDocs}
@@ -6854,6 +6909,15 @@ class App extends React.Component {
           ) : (
             <></>
           )}
+          <p></p>
+          {/* https://stackoverflow.com/questions/37620694/how-to-scroll-to-bottom-in-react */}
+          <div
+            style={{ float: "left", clear: "both" }}
+            ref={(el) => {
+              this.messagesEnd = el;
+            }}
+          ></div>
+          <p></p>
         </Container>
         {/* #####    BELOW ARE THE MODALS    #####    */}
         {this.state.isModalShowing &&
@@ -6976,7 +7040,7 @@ class App extends React.Component {
           <></>
         )}
 
-        {this.state.isModalShowing &&
+        {/* {this.state.isModalShowing &&
         this.state.presentModal === "ComingSoonModal" ? (
           <ComingSoonModal
             isModalShowing={this.state.isModalShowing}
@@ -6986,7 +7050,7 @@ class App extends React.Component {
           />
         ) : (
           <></>
-        )}
+        )} */}
 
         {this.state.isModalShowing &&
         this.state.presentModal === "RegisterPayGroupModal" ? (

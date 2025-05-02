@@ -39,7 +39,7 @@ class ConfirmAddMessageModal extends React.Component {
         </Modal.Header>
         <Modal.Body>
           <div className="bodytext">
-            <p>
+            <p style={{ whiteSpace: "pre-wrap" }}>
               <b>{this.props.messageToAdd}</b>
             </p>
           </div>

@@ -114,13 +114,15 @@ class SelectedPayGroupForm extends React.Component {
                   )}
                 </div>
               </Form.Group>
-              {this.state.tooLongCommentError ? (
-                <Form.Control.Feedback className="floatLeft" type="invalid">
+              {/* {this.state.tooLongCommentError ? (
+                <Form.Control.Feedback //className="floatLeft"
+                  type="invalid"
+                >
                   Sorry, this is too long! Please use less than 450 characters.
                 </Form.Control.Feedback>
               ) : (
                 <></>
-              )}
+              )} */}
             </Col>
           </Row>
         </div>

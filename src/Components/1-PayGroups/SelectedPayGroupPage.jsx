@@ -27,6 +27,15 @@ class SelectedPayGroupPage extends React.Component {
     this.props.pullInitialTriggerPAYGROUPMSGS();
   }
 
+  // //https://stackoverflow.com/questions/37620694/how-to-scroll-to-bottom-in-react
+  // scrollToBottom = () => {
+  //   this.messagesEnd.scrollIntoView({
+  //     behavior: "instant",
+  //     block: "start",
+  //     inline: "nearest",
+  //   });
+  // };
+
   render() {
     let today = new Date();
     let yesterday = new Date(today);
@@ -83,10 +92,8 @@ class SelectedPayGroupPage extends React.Component {
       //NEED TO ADD MSGS BEFORE CAN DECRYPT.
       chatMsgs = DecryptChatMsgs(encryptedMsgs, sharedChatKey).flat();
 
-      console.log("chatMsgs: ", chatMsgs);
+      // console.log("chatMsgs: ", chatMsgs);
     }
-
-    //Search through msgObjs returned.
 
     return (
       <>
@@ -118,7 +125,7 @@ class SelectedPayGroupPage extends React.Component {
             </h3>
             <Button
               variant="primary"
-              onClick={() => this.props.showModal("ComingSoonModal")}
+              onClick={() => this.props.handleSelectedDapp("PayGroupPmts")}
             >
               <b>Payments</b>
             </Button>
@@ -189,28 +196,27 @@ class SelectedPayGroupPage extends React.Component {
                       theSharedSecret={sharedChatKey}
                     />
                   }
-
-                  <p></p>
-                  <div className="footer">
-                    {/* {messages}
-                     */}
-                  </div>
-
-                  <p></p>
-                  {/* https://stackoverflow.com/questions/37620694/how-to-scroll-to-bottom-in-react */}
-                  <div
-                    style={{ float: "left", clear: "both" }}
-                    ref={(el) => {
-                      this.messagesEnd = el;
-                    }}
-                  ></div>
-                  <p></p>
                 </>
               ) : (
                 <></>
               )}
             </Col>
           </Row>
+          <p></p>
+          <div className="tenfooter">
+            {/* {messages}
+             */}
+          </div>
+
+          {/* <p></p>
+           https://stackoverflow.com/questions/37620694/how-to-scroll-to-bottom-in-react 
+          <div
+            style={{ float: "left", clear: "both" }}
+            ref={(el) => {
+              this.messagesEnd = el;
+            }}
+          ></div>
+          <p></p> */}
         </div>
       </>
     );

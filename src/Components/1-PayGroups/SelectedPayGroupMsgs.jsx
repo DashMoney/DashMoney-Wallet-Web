@@ -68,11 +68,11 @@ class SelectedPayGroupMsgs extends React.Component {
             <Card.Title className="cardTitle">
               <b>{this.props.uniqueName}</b>
 
-              <span className="textsmaller">
+              <span className="textsmaller" style={{ paddingRight: "2rem" }}>
                 {formatDate(msg.time, this.props.today, this.props.yesterday)}
               </span>
             </Card.Title>
-            <Card.Text>{msg.msg}</Card.Text>
+            <Card.Text style={{ whiteSpace: "pre-wrap" }}>{msg.msg}</Card.Text>
           </div>
         );
       } else {
@@ -91,7 +91,7 @@ class SelectedPayGroupMsgs extends React.Component {
                 {formatDate(msg.time, this.props.today, this.props.yesterday)}
               </span>
             </Card.Title>
-            <Card.Text>{msg.msg}</Card.Text>
+            <Card.Text style={{ whiteSpace: "pre-wrap" }}>{msg.msg}</Card.Text>
           </div>
         );
       }

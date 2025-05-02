@@ -212,6 +212,9 @@ div {
 .footer {
   margin-bottom: 6rem;
 }
+.tenfooter {
+  margin-bottom: 9rem;
+}
 
 .locationTitle {
   display: flex;
