@@ -75,9 +75,9 @@ class CreateJoinPage extends React.Component {
                       {this.props.isPayGroupsRefreshReady ? (
                         <Button
                           variant="primary"
-                          // onClick={() => {
-                          //   this.props.handleRefresh_PayGroups();
-                          // }}
+                          onClick={() => {
+                            this.props.handleRefresh_JoinGroups();
+                          }}
                           style={{
                             fontSize: "larger",
                             paddingLeft: "1rem",

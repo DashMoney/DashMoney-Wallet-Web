@@ -42,33 +42,6 @@ export default function dapiClientNoWallet(theNetwork) {
         PayGroupsContract: {
           contractId: "",
         },
-        // DSOContract: {
-        //   contractId: "D5NcY4hzfqqL4SzYufh4o6AgJFhCt3d6tZNNmRY5cKgF",
-        // },
-        // DGTContract: {
-        //   contractId: "HQMcSEbwWe1PVyT5Ku8RZxkeFzWtvkMuNeVJUci2NY64",
-        // },
-        // DGMContract: {
-        //   contractId: "54M9G1V36whjqtGgmvZkSx9rXu5iAthznn4iUyq8G1GN",
-        // },
-        // DGPContract: {
-        //   contractId: "2xQEL2A6EigkUw8oSumpJxqbTTPuF5KiGjzZoWLpb6Tc",
-        // },
-        // DMIOContract: {
-        //   contractId: "HSFUxLZqSgNLwYHDrMemhjgcZuP2yjqJWvzRoqGz6Z4w",
-        // },
-        // P2PContract: {
-        //   contractId: "2NZwXdb3wGQzbWQeQZHFAaL4GuQzuzF2v8iQfcKuUC5q",
-        // },
-        // DGRContract: {
-        //   contractId: "BWLc5EGfSEAwEcUqSddYa6BDeZ9TgyZEupSqmouWLB5i",
-        // },
-        // PODContract: {
-        //   contractId: "37wtDWoftBmXbSeNkmi9EA5CkYWPRRUprCs1KmiJ7tK6",
-        // },
-        // RADContract: {
-        //   contractId: "E13iAgrPF8pGdaHPDj3k8rMkACyawtawbjMqkcus15vB",
-        // },
       },
     };
   } else {
@@ -101,18 +74,6 @@ export default function dapiClientNoWallet(theNetwork) {
         },
         TwoPartyContract: {
           contractId: "EDLpeKCEFKGXDieomj4DidpCBJzuKf8paAHXcc1kQ89T",
-        },
-        RENTALSContract: {
-          contractId: "Czf3vDBKQZu8zNNsqTqVjxp2FoZEuhVfELULjkGV3S2B", //"HjHocG4oyLHgpnRMJEGagaTyrx6HaboCiGdcBzY3RKPU",
-        },
-        ONLINESTOREContract: {
-          contractId: "DpMzroPo7NFXmACmAZHhsdzPTVCPxNG71PRe17xH7H9", //"E1pambYerWzGaGdQVQcf9tyL5qRKh9mKgiYW9mETupjQ", //"C7w3BAZHvoijzDrRv9MvsvAGgqdSBS2Nbc341kkrpovV",
-        },
-        DMIOContract: {
-          contractId: "DftSJ4QDatQo4YNgWdRmYvg4fg2sMsyHSxmanvAKSjRr",
-        },
-        DGRContract: {
-          contractId: "HLu6Q3RDpGF5dJSmJjuszRfx9nkdwV2DYoURx3jyXWv6",
         },
       },
     };

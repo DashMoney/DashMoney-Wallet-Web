@@ -193,6 +193,8 @@ class App extends React.Component {
 
       InitialPullJoinPAYGROUPS: true,
 
+      isJoinGroupsRefreshReady: true,
+
       newJoinPayGroupDoc: "",
 
       selectedPayGroupDoc: "",
@@ -1843,6 +1845,29 @@ class App extends React.Component {
       this.setState({ isLoadingPayGroups: true });
     }
     this.getAllJoinPayGroupDocs();
+  };
+
+  handleRefresh_JoinGroups = () => {
+    this.setState({
+      //isLoadingWallet: true,
+      isLoadingPayGroups: true,
+      isJoinGroupsRefreshReady: false,
+    });
+
+    this.getAllJoinPayGroupDocs();
+    //this.loadIdentityCredits();
+
+    //REFRESH -> TIMEOUT
+    //if (!this.state.isJoinGroupsRefreshReady) {
+    const JoinGroupsTimeout = setTimeout(this.allowJoinGroupsRefresh, 6000);
+    // }
+    //REFRESH -> TIMEOUT
+  };
+
+  allowJoinGroupsRefresh = () => {
+    this.setState({
+      isJoinGroupsRefreshReady: true,
+    });
   };
 
   getAllJoinPayGroupDocs = () => {
@@ -6749,6 +6774,9 @@ class App extends React.Component {
                 pullInitialTriggerJoinPAYGROUPS={
                   this.pullInitialTriggerJoinPAYGROUPS
                 }
+                //
+                isPayGroupsRefreshReady={this.state.isPayGroupsRefreshReady}
+                handleRefresh_JoinGroups={this.handleRefresh_JoinGroups}
                 //
                 YourPayGroups={this.state.YourPayGroups}
                 JoinPayGroups={this.state.JoinPayGroups}
