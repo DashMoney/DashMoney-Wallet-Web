@@ -39,9 +39,9 @@ export default function dapiClientNoWallet(theNetwork) {
         DPNSContract: {
           contractId: "GWRSAVFMjXx8HpQFaNJMqBV7MBgMK4br5UESsB4S31Ec",
         },
-        PayGroupsContract: {
-          contractId: "",
-        },
+        // PayGroupsContract: {
+        //   contractId: "",
+        // },
       },
     };
   } else {
@@ -70,7 +70,8 @@ export default function dapiClientNoWallet(theNetwork) {
           contractId: "GWRSAVFMjXx8HpQFaNJMqBV7MBgMK4br5UESsB4S31Ec",
         },
         PayGroupsContract: {
-          contractId: "A5xatnwZ7DCN2mbopVMMTpA4ho7odU2e52adGjXuW8CZ",
+          contractId: "AyhSpcypjKmTnQCT2oDFWCZF2depMppT89sNLWb4T8Wh",
+          //"A5xatnwZ7DCN2mbopVMMTpA4ho7odU2e52adGjXuW8CZ",
         },
         TwoPartyContract: {
           contractId: "EDLpeKCEFKGXDieomj4DidpCBJzuKf8paAHXcc1kQ89T",

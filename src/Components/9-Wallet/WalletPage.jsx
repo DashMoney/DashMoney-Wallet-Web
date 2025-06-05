@@ -90,9 +90,9 @@ class WalletPage extends React.Component {
     //starts with X (mainnet) or Y (Testnet) and is 34 characters in length
     let addrRegex;
     if (this.props.whichNetwork === "testnet") {
-      addrRegex = /^[y][\S]{33}$/;
+      addrRegex = /^[y8][\S]{33}$/;
     } else {
-      addrRegex = /^[X][\S]{33}$/;
+      addrRegex = /^[X7][\S]{33}$/;
     }
 
     let validAddr = addrRegex.test(addrInput);

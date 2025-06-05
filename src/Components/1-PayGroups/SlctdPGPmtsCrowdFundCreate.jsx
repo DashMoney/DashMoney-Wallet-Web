@@ -1,3 +1,5 @@
+//This will be a page
+
 import React from "react";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -14,14 +16,14 @@ import handleDenomDisplay from "../UnitDisplay";
 
 import CreditsOnPage from "../CreditsOnPage";
 
-import CreateJoinCards from "./CreateJoinCards";
+//import CreateJoinCards from "./CreateJoinCards";
 
 import "../../App.css";
 
-class CreateJoinPage extends React.Component {
-  componentDidMount() {
-    this.props.pullInitialTriggerJoinPAYGROUPS();
-  }
+class SlctdPGPmtsCrowdFundCreate extends React.Component {
+  // componentDidMount() {
+  //   this.props.pullInitialTriggerJoinPAYGROUPS();
+  // }
 
   render() {
     return (
@@ -30,16 +32,16 @@ class CreateJoinPage extends React.Component {
           <Container>
             <Button
               variant="primary"
-              onClick={() => this.props.handleSelectedDapp("Pay Groups")}
+              onClick={() => this.props.handleSelectedDapp("PayGroup")}
             >
               <IoMdArrowRoundBack size={28} />
             </Button>
 
             <h3 style={{ textAlign: "center" }}>
               {this.props.mode === "primary" ? (
-                <b className="lightMode">Create/Join Pay Group</b>
+                <b className="lightMode">Payments</b>
               ) : (
-                <b>Create/Join Pay Group</b>
+                <b>Payments</b>
               )}
             </h3>
             <div style={{ marginRight: "4rem" }}></div>
@@ -48,62 +50,6 @@ class CreateJoinPage extends React.Component {
         <div className="bodytext">
           <Row className="justify-content-md-center">
             <Col md={9} lg={8} xl={7} xxl={6}>
-              {this.props.isLoadingWallet ? (
-                <>
-                  <div className="paddingBadge">
-                    <b>Wallet Balance</b>
-
-                    <h4>Loading..</h4>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="paddingBadge">
-                    <div className="cardCenterTitle">
-                      <div>
-                        <b>Wallet Balance</b>
-                        <h4 style={{ color: "#008de4" }}>
-                          <b>
-                            {handleDenomDisplay(
-                              this.props.whichNetwork,
-                              this.props.accountBalance
-                            )}
-                          </b>
-                        </h4>
-                      </div>
-
-                      {this.props.isJoinGroupsRefreshReady ? (
-                        <Button
-                          variant="primary"
-                          onClick={() => {
-                            this.props.handleRefresh_JoinGroups();
-                          }}
-                          style={{
-                            fontSize: "larger",
-                            paddingLeft: "1rem",
-                            paddingRight: "1rem",
-                          }}
-                        >
-                          <b>Refresh</b>
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="primary"
-                          disabled
-                          style={{
-                            fontSize: "larger",
-                            paddingLeft: "1rem",
-                            paddingRight: "1rem",
-                          }}
-                        >
-                          <b>Refresh</b>
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-
               <div id="sidetextonlytop">
                 <CreditsOnPage
                   identityInfo={this.props.identityInfo}
@@ -112,7 +58,7 @@ class CreateJoinPage extends React.Component {
                 />
               </div>
 
-              {!this.props.isLoadingPayGroups ? (
+              {/* {!this.props.isLoadingPayGroups ? (
                 <>
                   <div className="d-grid gap-2" style={{ margin: "1rem" }}>
                     <Button
@@ -128,18 +74,18 @@ class CreateJoinPage extends React.Component {
                 </>
               ) : (
                 <></>
-              )}
+              )} */}
 
               <div
                 //className="cardTitle"
                 style={{ textAlign: "center", marginTop: "2rem" }}
               >
                 <h2>
-                  <b>Join Pay Groups</b>
+                  <b>Coming Soon!</b>
                 </h2>
               </div>
 
-              {this.props.isLoadingPayGroups ? (
+              {/* {this.props.isLoadingPayGroups ? (
                 <>
                   <p></p>
                   <div id="spinner">
@@ -151,11 +97,11 @@ class CreateJoinPage extends React.Component {
                 </>
               ) : (
                 <></>
-              )}
+              )} */}
             </Col>
           </Row>
 
-          {this.props.isLoadingPayGroups ? (
+          {/* {this.props.isLoadingPayGroups ? (
             <></>
           ) : (
             <>
@@ -184,11 +130,11 @@ class CreateJoinPage extends React.Component {
                 JoinPayGroupsPubKeys={this.props.JoinPayGroupsPubKeys}
               />
             </>
-          )}
+          )} */}
         </div>
       </>
     );
   }
 }
 
-export default CreateJoinPage;
+export default SlctdPGPmtsCrowdFundCreate;

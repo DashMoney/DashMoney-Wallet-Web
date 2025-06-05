@@ -204,7 +204,22 @@ class TopNav extends React.Component {
 
                 <Nav fill>
                   <p></p>
-                  {isLoginComplete ? ( // ADDED ! FOR CONSTRUCTION
+                  {/* {isLoginComplete ? (
+                    <NavSelects
+                      selection="Public Spaces"
+                      selectedDapp={this.props.selectedDapp}
+                      handleSelectedDapp={this.props.handleSelectedDapp}
+                    />
+                  ) : ( */}
+                  <Nav.Link className="canvasLinkDisabled" disabled>
+                    <h5>
+                      <b>Public Spaces</b>
+                    </h5>
+                  </Nav.Link>
+                  {/* )} */}
+
+                  <p></p>
+                  {isLoginComplete ? (
                     <NavSelects
                       selection="Pay Groups"
                       selectedDapp={this.props.selectedDapp}
@@ -217,7 +232,7 @@ class TopNav extends React.Component {
                       </h5>
                     </Nav.Link>
                   )}
-
+                  <p></p>
                   <Nav.Link className="canvasLinkDisabled" disabled>
                     <h5>
                       <b>2-Party Pay</b>

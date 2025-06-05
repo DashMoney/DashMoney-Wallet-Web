@@ -3,13 +3,16 @@ import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import CloseButton from "react-bootstrap/CloseButton";
 
-class ConfirmAddMessageModal extends React.Component {
+import { BiSolidLike } from "react-icons/bi";
+//<BiSolidLike />
+
+class ConfirmAddLikeModal extends React.Component {
   handleCloseClick = () => {
     this.props.hideModal();
   };
 
-  handleAddMessagetoGroupChat = () => {
-    this.props.decideMsgNumOrNewDoc4MSG();
+  handleAddLiketoGroupChat = () => {
+    this.props.decideMsgNumOrNewDoc4LIKE();
     //this.props.closeTopNav();
     this.props.hideModal();
   };
@@ -34,22 +37,34 @@ class ConfirmAddMessageModal extends React.Component {
     return (
       <Modal show={this.props.isModalShowing} contentClassName={modalBkg}>
         <Modal.Header>
-          <Modal.Title>Add to Group Chat</Modal.Title>
+          <Modal.Title>Add Like to Message</Modal.Title>
           {closeButtonColor}
         </Modal.Header>
         <Modal.Body>
+          <div className="cardTitle">
+            <b style={{ color: "#008de4", fontSize: "large" }}>
+              {this.props.messageObjectLiked.label}
+            </b>
+
+            <span
+              className="textsmaller"
+              style={{ paddingRight: "2rem" }}
+            ></span>
+          </div>
           <div className="bodytext">
             <p style={{ whiteSpace: "pre-wrap" }}>
-              <b>{this.props.messageToAdd}</b>
+              <b>{this.props.messageObjectLiked.msg}</b>
             </p>
           </div>
-          {/* Enabling <b>Pay Groups</b> will allow you to form multisigs and
-          private group chats with others on Dash Platform. */}
         </Modal.Body>
 
         <Modal.Footer>
-          <Button variant="primary" onClick={this.handleAddMessagetoGroupChat}>
-            <b>Add Message</b>
+          <Button variant="primary" onClick={this.handleAddLiketoGroupChat}>
+            {/* <b>Add Like</b> */}
+            <BiSolidLike
+              size={22}
+              style={{ marginLeft: "1rem", marginRight: "1rem" }}
+            />
           </Button>
         </Modal.Footer>
       </Modal>
@@ -57,4 +72,4 @@ class ConfirmAddMessageModal extends React.Component {
   }
 }
 
-export default ConfirmAddMessageModal;
+export default ConfirmAddLikeModal;

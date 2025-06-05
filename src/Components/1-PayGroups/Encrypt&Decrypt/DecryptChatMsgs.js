@@ -31,11 +31,18 @@ export default function DecryptChatMsgs(
   // //console.log("hashPWD: ", hashPWD);
 
   let decryptedMsgs = [];
+  let decryptedLikes = [];
 
   theEncryptedMsgsArrayOfTuples.forEach((x) => {
     let decryptedData = AES.decrypt(x[1], theDocKey);
 
     let decryptedParsedData = JSON.parse(decryptedData.toString(enc.Utf8));
+
+    console.log("decryptedData: ", decryptedData.toString(enc.Utf8));
+
+    //!!! BELOW
+    //Previous
+    //msg1 = [{msg:.., time:...}]
 
     //msg should be Array of Objects
     // {
@@ -44,15 +51,41 @@ export default function DecryptChatMsgs(
     //   owner: this.props.req.$ownerId, <- NOT this one
     // }
 
-    decryptedParsedData.forEach((msgObj) => {
+    //!!! BELOW
+    //Changed to
+    //msg1 = {msgs:[{msg:.., time:...}],likes:[]}
+
+    //SEPARATE IT -> DONE
+
+    // decryptedParsedData.msgs.forEach((msgObj) => {
+    //   msgObj.owner = x[0];
+    //   msgObj.time = msgObj.time * 1000;
+    // });
+
+    let decryptedParsedMsgs = decryptedParsedData.msgs.map((msgObj) => {
       msgObj.owner = x[0];
       msgObj.time = msgObj.time * 1000;
+
+      return msgObj;
     });
 
-    // console.log("decryptedData: ", decryptedData.toString(enc.Utf8));
+    let decryptedParsedLikes;
 
-    decryptedMsgs.push(decryptedParsedData);
+    if (decryptedParsedData.likes.length !== 0) {
+      decryptedParsedLikes = decryptedParsedData.likes.map((likeObj) => {
+        //return { owner: x[0], likesArr: likeObj };
+        return [x[0], likeObj];
+      });
+      decryptedLikes.push(decryptedParsedLikes);
+    } //else {
+    // decryptedParsedLikes = { owner: x[0], likesArr: "none" };
+    //}
+
+    decryptedMsgs.push(decryptedParsedMsgs);
+    // decryptedLikes.push(decryptedParsedLikes);
   });
 
-  return decryptedMsgs;
+  console.log("decryptedData: ", [decryptedMsgs, decryptedLikes]);
+
+  return [decryptedMsgs, decryptedLikes];
 }

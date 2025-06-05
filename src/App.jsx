@@ -11,6 +11,8 @@ import Col from "react-bootstrap/Col";
 
 import TopNav from "./Components/TopNav/TopNav";
 
+import PublicSpacesPage from "./Components/3-PublicSpaces/PublicSpacesPage";
+
 import encryptMyReq from "./Components/2-PartyPay/encryptMyReq";
 import encryptMyResp from "./Components/2-PartyPay/encryptMyResp";
 
@@ -59,6 +61,12 @@ import DecryptChatDoc4Edit from "./Components/1-PayGroups/Encrypt&Decrypt/Decryp
 
 import EncryptChatDoc4Edit from "./Components/1-PayGroups/Encrypt&Decrypt/EncryptChatDoc4Edit";
 
+import getYourXPub from "./Components/1-PayGroups/MultisigFuncs/getYourXPub";
+
+import xPubsInMultiScriptOut from "./Components/1-PayGroups/MultisigFuncs/xPubsInMultiScriptOut";
+
+import multiSigUTXOsQuery from "./Components/1-PayGroups/MultisigFuncs/RPCWebProxyMultiSigUTXOQuery";
+
 import ConfirmCreatePayGroupModal from "./Components/1-PayGroups/Modals/ConfirmCreatePayGroupModal";
 
 import ConfirmJoinPayGroupModal from "./Components/1-PayGroups/Modals/ConfirmJoinPayGroupModal";
@@ -72,6 +80,14 @@ import ConfirmFinalizePayGroupModal from "./Components/1-PayGroups/Modals/Confir
 // import ComingSoonModal from "./Components/1-PayGroups/Modals/ComingSoonModal";
 
 import ConfirmAddMessageModal from "./Components/1-PayGroups/Modals/ConfirmAddMessageModal";
+
+import ConfirmAddLikeModal from "./Components/1-PayGroups/Modals/ConfirmAddLikeModal";
+
+import SelectedPayGroupPmtsCreateMultisig from "./Components/1-PayGroups/SelectedPayGroupPmtsCreateMultisig";
+
+import ConfirmCreateMultiSigAcctModal from "./Components/1-PayGroups/Modals/ConfirmCreateMultiSigAcctModal";
+
+import ConfirmAcceptMultiSigAcctModal from "./Components/1-PayGroups/Modals/ConfirmAcceptMultiSigAcctModal";
 
 // import ProxyPage from "./Components/1-ProxyAccounts/ProxyPage";
 // import HowProxyModal from "./Components/1-ProxyAccounts/HowProxyModal";
@@ -157,6 +173,8 @@ class App extends React.Component {
       //ACCOUNT 'LOGIN' PAGE STATE^^^^^^
 
       //PAY GROUPS PAGE
+
+      YourPGsMultiSigUTXOs: [],
 
       isLoadingPayGroups: true,
       isLoadingPayGroupMsgs: true,
@@ -1397,14 +1415,58 @@ class App extends React.Component {
 
   checkMyPayGroupsRace = () => {
     if (this.state.PayGroups1 && this.state.PayGroups2) {
-      this.setState({
-        // isLoadingWallet: false,
-        isLoadingPayGroups: false,
+      this.setState(
+        {
+          // isLoadingWallet: false,
+          isLoadingPayGroups: false,
 
-        PayGroups1: false,
-        PayGroups2: false,
-      });
+          PayGroups1: false,
+          PayGroups2: false,
+        },
+        () => this.pullMultiSigUTXOs()
+      );
     }
+  };
+
+  pullMultiSigUTXOs = () => {
+    console.log("Calling pullMultiSigUTXOs");
+
+    //WILL NEED ALL YOURMBRDOCS -> LOOP THROUGH AND GET SCRIPTS ->
+
+    let allYourPayGroupsScripts = [];
+    //
+    this.state.YourPayGroups.forEach((x) => {
+      let keyArray = [];
+      if (x.scripts.pub !== undefined) {
+        keyArray = Object.keys(x.scripts.pub);
+        keyArray.forEach((y) => {
+          allYourPayGroupsScripts.push(x.scripts.pub[y][0]);
+        });
+      }
+    });
+
+    console.log("allYourPayGroupsScripts: ", allYourPayGroupsScripts);
+
+    const getYourPGScripts = async () => {
+      //check that it is not [] empty ->
+      let utxos = await multiSigUTXOsQuery(
+        allYourPayGroupsScripts,
+        this.state.whichNetwork
+      );
+      return utxos;
+    };
+
+    getYourPGScripts()
+      .then((d) => {
+        console.log("API Data: ", d);
+
+        this.setState({
+          YourPGsMultiSigUTXOs: d,
+        });
+      })
+      .catch((e) => console.error("Something went wrong:\n", e));
+
+    //allYourPayGroupDocs should be an array of arrays
   };
 
   //QUERY -> myPayGroup -> $ownerId
@@ -1480,6 +1542,7 @@ class App extends React.Component {
     //allYourPayGroupDocs should be an array of arrays
     //console.log("Your Pay Groups: ", allYourPayGroupDocs);
   };
+
   // performs (7->5)
   getYourPayGroupDocs = async (theNumOfMbrs) => {
     const client = new Dash.Client(dapiClientNoWallet(this.state.whichNetwork));
@@ -1517,6 +1580,10 @@ class App extends React.Component {
 
             returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
 
+            if (returnedDoc.scripts !== "") {
+              returnedDoc.scripts = JSON.parse(returnedDoc.scripts);
+            }
+
             //DECRYPT dATA TO tEST -> sat
 
             let DecryptedFromMbrs = DocKeyDecrypt(
@@ -1525,18 +1592,32 @@ class App extends React.Component {
               this.state.mnemonic
             );
 
-            console.log("DecryptedFromMbrs: ", DecryptedFromMbrs);
+            //console.log("DecryptedFromMbrs: ", DecryptedFromMbrs);
+
+            //SO FromMbrs ONLY SAVE ON FINALIZED EDIT -> CHECK ->
+            // ALSO NEED TO ADD FOR THE FINAL DOC EDIT BC THIS ONLY ADD ON THE PULL ->
+            //
+            let mbrsXPubsToPass = JSON.parse(DecryptedFromMbrs);
+
+            // THEREFORE CAN DECRYPT AND SAVE AS mbrsXPubs after I add my own to the array ->
+
+            // function getYourXPub(theMnemonic,theTimeIndex,whichNetwork)
+
+            mbrsXPubsToPass.push(
+              getYourXPub(
+                this.state.mnemonic,
+                returnedDoc.timeIndex,
+                this.state.whichNetwork
+              )
+            );
+
+            console.log("mbrsXPubsToPass: ", mbrsXPubsToPass);
+
+            returnedDoc.mbrsXPubs = mbrsXPubsToPass;
 
             // if (returnedDoc.fromMbrs !== "") {
             //   returnedDoc.fromMbrs = JSON.parse(returnedDoc.fromMbrs);
             // }
-
-            //decryptMyReqs(theReqs, theMnemonic, whichNetwork)
-            // let decryptedDocs = decryptMyReqs(
-            //   docArray,
-            //   this.state.mnemonic,
-            //   this.state.whichNetwork
-            // );
 
             //ALSO NEED TO FOR EACH MBR# ->  ***
             let mbrNum = parseInt(returnedDoc.$type.slice(4, 5));
@@ -1694,6 +1775,10 @@ class App extends React.Component {
             ).toJSON();
 
             returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
+
+            if (returnedDoc.scripts !== "") {
+              returnedDoc.scripts = JSON.parse(returnedDoc.scripts);
+            }
 
             //ALSO NEED TO FOR EACH MBR# ->  ***
 
@@ -2528,6 +2613,422 @@ class App extends React.Component {
       .finally(() => client.disconnect());
   };
 
+  showConfirmCreateMultiSigAcctModal = (theLabel, numOfMbrs) => {
+    //Determine index here? ->
+    //func(numOfMbrs) and uses your mbrDoc ->
+    let theIndex = 1;
+    let currentKeys = [];
+
+    let scriptObjKey = numOfMbrs * 10;
+
+    console.log(scriptObjKey);
+
+    if (this.state.selectedPayGroupDoc.scripts !== "") {
+      currentKeys = this.state.selectedPayGroupDoc.scripts.pub.keys();
+    }
+    let orderedKeys = [];
+
+    if (currentKeys.length !== 0) {
+      //order highest to lowest -> SAT
+      orderedKeys = currentKeys.sort(function (a, b) {
+        return b - a;
+      });
+
+      console.log("orderedKeys: ", orderedKeys);
+    }
+
+    let highestIndex = orderedKeys.find((x) => {
+      return x < scriptObjKey + 10 && x > scriptObjKey;
+    });
+
+    //console.log(highestIndex);
+
+    if (highestIndex === undefined) {
+      theIndex = theIndex + scriptObjKey;
+    } else {
+      theIndex = highestIndex + 1;
+    }
+
+    console.log("theIndex: ", theIndex);
+
+    this.setState({
+      multiSigNumOfMbrs: numOfMbrs,
+      multiSigLabel: theLabel,
+      multiSigIndex: theIndex,
+      presentModal: "ConfirmCreateMultiSigAcctModal",
+      isModalShowing: true,
+    });
+  };
+
+  editPayGroupMbrDoc4MultiSigAcct = () => {
+    //console.log("Called Edit Pay Group Mbr Doc 4 MultiSig Acct");
+
+    this.setState({
+      isLoadingPayGroups: true,
+      isModalShowing: false,
+      selectedDapp: "PayGroupPmts",
+    });
+
+    const client = new Dash.Client(
+      dapiClient(
+        this.state.whichNetwork,
+        this.state.mnemonic,
+        this.state.skipSynchronizationBeforeHeight
+      )
+    );
+
+    const editDocument = async () => {
+      const { platform } = client;
+      // const identity = await platform.identities.get(this.state.identity); // Your identity ID
+
+      let identity = "";
+      if (this.state.identityRaw !== "") {
+        identity = this.state.identityRaw;
+      } else {
+        identity = await platform.identities.get(this.state.identity);
+      } // Your identity ID
+
+      const [document] = await client.platform.documents.get(
+        `PayGroupsContract.${this.state.selectedPayGroupDoc.$type}`,
+        {
+          where: [["$id", "==", this.state.selectedPayGroupDoc.$id]],
+        }
+      );
+
+      // MOVE GET YOURXPUB  TO THE MBR QUERY WHERE THE XPUBS ARE DECRYPTED!! and save them in mbrDoc -> ***
+
+      //multiSigNumOfMbrs
+      //multiSigLabel
+      //multiSigIndex
+
+      // export default function xPubsInMultiScriptOut(
+      //   theXPubs,
+      //   theNumOfMbrsReq,
+      //   theIndex,
+      //   whichNetwork
+      // )
+
+      let newMultiSigScripts = xPubsInMultiScriptOut(
+        this.state.selectedPayGroupDoc.mbrsXPubs,
+        this.state.multiSigNumOfMbrs,
+        this.state.multiSigIndex.toString().slice(1, 2),
+        this.state.whichNetwork
+      );
+
+      //NEED TO GET THE XPUBS FOR ALL MEMBERS -> FROM MY MBRdOC <-***
+
+      //pASS XPUBS AND INDEX TO FUNC ->
+
+      //BUILD MBR DOC SCRIPTS ->
+      let newScripts = { pub: {} };
+      if (this.state.selectedPayGroupDoc.scripts === "") {
+        newScripts.pub[this.state.multiSigIndex] = [
+          newMultiSigScripts,
+          this.state.multiSigLabel,
+        ];
+      } else {
+        newScripts = this.state.selectedPayGroupDoc.scripts;
+
+        newScripts.pub[this.state.multiSigIndex] = [
+          newMultiSigScripts,
+          this.state.multiSigLabel,
+        ];
+      }
+
+      document.set("scripts", JSON.stringify(newScripts));
+
+      await platform.documents.broadcast({ replace: [document] }, identity);
+      return document;
+
+      //############################################################
+      //This below disconnects the document editing..***
+
+      //return document;
+
+      //This is to disconnect the Document editing***
+      //############################################################
+    };
+
+    editDocument()
+      .then((d) => {
+        let returnedDoc = d.toJSON();
+
+        returnedDoc.payGroupId = Identifier.from(
+          returnedDoc.payGroupId,
+          "base64"
+        ).toJSON();
+
+        //returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
+        //Already Parsed ^^
+
+        returnedDoc.scripts = JSON.parse(returnedDoc.scripts);
+
+        //ALSO NEED TO FOR EACH MBR# ->  ***
+        let mbrNum = parseInt(returnedDoc.$type.slice(4, 5));
+
+        if (mbrNum === 1) {
+          returnedDoc.mbrsList = JSON.parse(returnedDoc.mbrsList);
+        } else {
+          for (let i = 2; i <= mbrNum; i++) {
+            returnedDoc[`mbr${i}`] = Identifier.from(
+              returnedDoc[`mbr${i}`],
+              "base64"
+            ).toJSON();
+          }
+        }
+
+        //ADD THE XPUBS HERE AS WELL ->
+        //returnedDoc.fromMbrs = JSON.parse(returnedDoc.fromMbrs);
+        let DecryptedFromMbrs = DocKeyDecrypt(
+          returnedDoc.fromMbrs,
+          returnedDoc.timeIndex,
+          this.state.mnemonic
+        );
+
+        console.log("DecryptedFromMbrs: ", DecryptedFromMbrs);
+
+        let mbrsXPubsToPass = JSON.parse(DecryptedFromMbrs);
+
+        // function getYourXPub(theMnemonic,theTimeIndex,whichNetwork)
+
+        mbrsXPubsToPass.push(
+          getYourXPub(
+            this.state.mnemonic,
+            returnedDoc.timeIndex,
+            this.state.whichNetwork
+          )
+        );
+
+        console.log("mbrsXPubsToPass: ", mbrsXPubsToPass);
+
+        returnedDoc.mbrsXPubs = mbrsXPubsToPass;
+
+        // EDIT AND REPLACE :
+
+        let indexToReplace = this.state.YourPayGroups.findIndex(
+          (x) => x.$id === returnedDoc.$id
+        );
+        //console.log(indexToReplace);
+
+        let editedYourPayGroupDocs = this.state.YourPayGroups;
+
+        editedYourPayGroupDocs.splice(parseInt(indexToReplace), 1, returnedDoc);
+
+        console.log("EditedMbrDoc:\n", returnedDoc);
+
+        this.setState(
+          {
+            selectedPayGroupDoc: returnedDoc,
+            YourPayGroups: editedYourPayGroupDocs,
+            // selectedDapp: "PayGroupPmts",
+            isLoadingPayGroups: false,
+          },
+          () => this.loadIdentityCredits()
+        );
+      })
+      .catch((e) => {
+        this.setState({
+          isLoadingPayGroups: false,
+        });
+
+        console.error("Something went wrong creating Pay Group Script:\n", e);
+      })
+      .finally(() => client.disconnect());
+  };
+
+  showAcceptMultiSigAcctModal = (theLabel, theIndex) => {
+    console.log("theIndex: ", theIndex);
+
+    this.setState({
+      multiSigNumOfMbrs: Number(theIndex.toString().slice(0, 1)),
+      multiSigLabel: theLabel,
+      multiSigIndex: theIndex,
+      presentModal: "ConfirmAcceptMultiSigAcctModal",
+      isModalShowing: true,
+    });
+  };
+
+  editPGMbrDocAcceptMultiSigAcct = () => {
+    //console.log("Called Edit Pay Group Mbr Doc 4 MultiSig Acct");
+
+    this.setState({
+      isLoadingPayGroups: true,
+      isModalShowing: false,
+      selectedDapp: "PayGroupPmts",
+    });
+
+    const client = new Dash.Client(
+      dapiClient(
+        this.state.whichNetwork,
+        this.state.mnemonic,
+        this.state.skipSynchronizationBeforeHeight
+      )
+    );
+
+    const editDocument = async () => {
+      const { platform } = client;
+      // const identity = await platform.identities.get(this.state.identity); // Your identity ID
+
+      let identity = "";
+      if (this.state.identityRaw !== "") {
+        identity = this.state.identityRaw;
+      } else {
+        identity = await platform.identities.get(this.state.identity);
+      } // Your identity ID
+
+      const [document] = await client.platform.documents.get(
+        `PayGroupsContract.${this.state.selectedPayGroupDoc.$type}`,
+        {
+          where: [["$id", "==", this.state.selectedPayGroupDoc.$id]],
+        }
+      );
+
+      // MOVE GET YOURXPUB  TO THE MBR QUERY WHERE THE XPUBS ARE DECRYPTED!! and save them in mbrDoc -> ***
+
+      //multiSigNumOfMbrs
+      //multiSigLabel
+      //multiSigIndex
+
+      // export default function xPubsInMultiScriptOut(
+      //   theXPubs,
+      //   theNumOfMbrsReq,
+      //   theIndex,
+      //   whichNetwork
+      // )
+
+      let newMultiSigScripts = xPubsInMultiScriptOut(
+        this.state.selectedPayGroupDoc.mbrsXPubs,
+        this.state.multiSigNumOfMbrs,
+        this.state.multiSigIndex.toString().slice(1, 2),
+        this.state.whichNetwork
+      );
+
+      //NEED TO GET THE XPUBS FOR ALL MEMBERS -> FROM MY MBRdOC <-***
+
+      //pASS XPUBS AND INDEX TO FUNC ->
+
+      //BUILD MBR DOC SCRIPTS ->
+      let newScripts = { pub: {} };
+      if (this.state.selectedPayGroupDoc.scripts === "") {
+        newScripts.pub[this.state.multiSigIndex] = [
+          newMultiSigScripts,
+          this.state.multiSigLabel,
+        ];
+      } else {
+        newScripts = this.state.selectedPayGroupDoc.scripts;
+
+        newScripts.pub[this.state.multiSigIndex] = [
+          newMultiSigScripts,
+          this.state.multiSigLabel,
+        ];
+      }
+
+      document.set("scripts", JSON.stringify(newScripts));
+
+      // await platform.documents.broadcast({ replace: [document] }, identity);
+      // return document;
+
+      //############################################################
+      //This below disconnects the document editing..***
+
+      return document;
+
+      //This is to disconnect the Document editing***
+      //############################################################
+    };
+
+    editDocument()
+      .then((d) => {
+        let returnedDoc = d.toJSON();
+
+        returnedDoc.payGroupId = Identifier.from(
+          returnedDoc.payGroupId,
+          "base64"
+        ).toJSON();
+
+        //returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
+        //Already Parsed ^^
+
+        returnedDoc.scripts = JSON.parse(returnedDoc.scripts);
+
+        //ALSO NEED TO FOR EACH MBR# ->  ***
+        let mbrNum = parseInt(returnedDoc.$type.slice(4, 5));
+
+        if (mbrNum === 1) {
+          returnedDoc.mbrsList = JSON.parse(returnedDoc.mbrsList);
+        } else {
+          for (let i = 2; i <= mbrNum; i++) {
+            returnedDoc[`mbr${i}`] = Identifier.from(
+              returnedDoc[`mbr${i}`],
+              "base64"
+            ).toJSON();
+          }
+        }
+
+        //ADD THE XPUBS HERE AS WELL ->
+        //returnedDoc.fromMbrs = JSON.parse(returnedDoc.fromMbrs);
+        let DecryptedFromMbrs = DocKeyDecrypt(
+          returnedDoc.fromMbrs,
+          returnedDoc.timeIndex,
+          this.state.mnemonic
+        );
+
+        console.log("DecryptedFromMbrs: ", DecryptedFromMbrs);
+
+        let mbrsXPubsToPass = JSON.parse(DecryptedFromMbrs);
+
+        // function getYourXPub(theMnemonic,theTimeIndex,whichNetwork)
+
+        mbrsXPubsToPass.push(
+          getYourXPub(
+            this.state.mnemonic,
+            returnedDoc.timeIndex,
+            this.state.whichNetwork
+          )
+        );
+
+        console.log("mbrsXPubsToPass: ", mbrsXPubsToPass);
+
+        returnedDoc.mbrsXPubs = mbrsXPubsToPass;
+
+        // EDIT AND REPLACE :
+
+        let indexToReplace = this.state.YourPayGroups.findIndex(
+          (x) => x.$id === returnedDoc.$id
+        );
+        //console.log(indexToReplace);
+
+        let editedYourPayGroupDocs = this.state.YourPayGroups;
+
+        editedYourPayGroupDocs.splice(parseInt(indexToReplace), 1, returnedDoc);
+
+        console.log("EditedMbrDoc:\n", returnedDoc);
+
+        this.setState(
+          {
+            selectedPayGroupDoc: returnedDoc,
+            YourPayGroups: editedYourPayGroupDocs,
+            // selectedDapp: "PayGroupPmts",
+            isLoadingPayGroups: false,
+          },
+          () => this.getIdCreditsAndUTXOs()
+        );
+      })
+      .catch((e) => {
+        this.setState({
+          isLoadingPayGroups: false,
+        });
+
+        console.error("Something went wrong creating Pay Group Script:\n", e);
+      })
+      .finally(() => client.disconnect());
+  };
+
+  getIdCreditsAndUTXOs = () => {
+    this.loadIdentityCredits();
+    this.pullMultiSigUTXOs();
+  };
+
   /// PayGroupPage
   //need to SEND TO MSGS QUERY!! ->
   decideFinalizeOrGoToPage = (
@@ -2793,7 +3294,7 @@ class App extends React.Component {
   //selectedDapp, controlBackArrow - loading state, and initial query
   // AND clear msgs!! ->
 
-  handlePayGroupBackArrow = () => {
+  handlePayGroupMsgsBackArrow = () => {
     this.setState({
       selectedDapp: "Pay Groups",
       isLoadingPayGroupMsgs: true,
@@ -3151,6 +3652,9 @@ class App extends React.Component {
         msg1: "",
         msg2: "",
         msg3: "",
+        msg4: "",
+        msg5: "",
+        msg6: "",
       };
 
       console.log("docProperties: ", docProperties);
@@ -3344,6 +3848,9 @@ class App extends React.Component {
         msg1: "",
         msg2: "",
         msg3: "",
+        msg4: "",
+        msg5: "",
+        msg6: "",
       };
 
       //console.log("docProperties: ", docProperties);
@@ -3397,8 +3904,8 @@ class App extends React.Component {
             ],
 
             isLoadingPayGroupMsgs: false,
-          }
-          //() => this.handleRefresh_PayGroups()
+          },
+          () => this.loadIdentityCredits()
         );
       })
       .catch((e) => {
@@ -3427,6 +3934,9 @@ class App extends React.Component {
       yourLatestChatDoc = yourChatDocs[0];
     } else {
       //Do Later
+      //let orderedMsgs = this.props.chatMsgs.sort(function (a, b) {
+      //   return a.time - b.time;
+      // });
       yourLatestChatDoc = yourChatDocs[0];
     }
 
@@ -3444,7 +3954,38 @@ class App extends React.Component {
     });
   };
 
-  editAddMessageToChatDoc = () => {
+  decideMsgNumOrNewDoc4MSG = () => {
+    //this.state.chatDocToEdit
+
+    //msg1
+    if (this.state.chatDocToEdit.msg1.length < 2000) {
+      this.editAddMessageToChatDoc("msg1");
+    }
+    //msg2
+    else if (this.state.chatDocToEdit.msg2.length < 2000) {
+      this.editAddMessageToChatDoc("msg2");
+    }
+    //msg3
+    else if (this.state.chatDocToEdit.msg3.length < 2000) {
+      this.editAddMessageToChatDoc("msg3");
+    }
+    //msg4
+    else if (this.state.chatDocToEdit.msg4.length < 2000) {
+      this.editAddMessageToChatDoc("msg4");
+    }
+    //msg5
+    else if (this.state.chatDocToEdit.msg5.length < 2000) {
+      this.editAddMessageToChatDoc("msg5");
+    }
+    //msg6
+    else if (this.state.chatDocToEdit.msg6.length < 2000) {
+      this.editAddMessageToChatDoc("msg6");
+    } else {
+      //createNewChatDoc() and start at msg1
+    }
+  };
+
+  editAddMessageToChatDoc = (theMsgNum) => {
     //  console.log("Called Edit ResponseAddMessage");
     this.setState({
       isLoadingPayGroupMsgs: true,
@@ -3468,28 +4009,229 @@ class App extends React.Component {
       msg: this.state.messageToAdd,
       time: theTime,
     };
+
     let msgArrayToDecrypt;
-    let decryptedMsgArray = [];
 
-    if (this.state.chatDocToEdit.msg1 !== "") {
-      msgArrayToDecrypt = this.state.chatDocToEdit.msg1;
+    //change decryptedMsgArray -> decryptedMsgObject
+    //let decryptedMsgArray = [];
+    let decryptedMsgObject = { msgs: [], likes: [] };
 
-      decryptedMsgArray = DecryptChatDoc4Edit(
+    if (this.state.chatDocToEdit[theMsgNum] !== "") {
+      msgArrayToDecrypt = this.state.chatDocToEdit[theMsgNum];
+
+      decryptedMsgObject = DecryptChatDoc4Edit(
         msgArrayToDecrypt,
         this.state.sharedSecret
       );
 
-      decryptedMsgArray = JSON.parse(decryptedMsgArray);
+      decryptedMsgObject = JSON.parse(decryptedMsgObject);
     }
 
-    decryptedMsgArray.push(theMsgObject);
+    //Previous
+    //msg1 = [{msg:.., time:...}]
 
-    console.log("MsgArrayToEncrypt: ", decryptedMsgArray);
+    //Change to
+    //msg1 = {msgs:[{msg:.., time:...}],likes:[likeId,...]}
+
+    decryptedMsgObject.msgs.push(theMsgObject);
+
+    console.log("MsgObjectToEncrypt: ", decryptedMsgObject);
 
     //SEND OBJECT TO ENCRYPT ->
 
     let encrypted4ChatDoc = EncryptChatDoc4Edit(
-      JSON.stringify(decryptedMsgArray),
+      JSON.stringify(decryptedMsgObject),
+      this.state.sharedSecret
+    );
+
+    console.log("encrypted4ChatDoc: ", encrypted4ChatDoc);
+
+    // *** *** ***
+
+    const submit2PartyDoc = async () => {
+      const { platform } = client;
+
+      let identity = "";
+      if (this.state.identityRaw !== "") {
+        identity = this.state.identityRaw;
+      } else {
+        identity = await platform.identities.get(this.state.identity);
+      }
+
+      const [document] = await client.platform.documents.get(
+        "PayGroupsContract.chatDoc",
+        {
+          where: [["$id", "==", this.state.chatDocToEdit.$id]],
+        }
+      );
+
+      document.set(theMsgNum, encrypted4ChatDoc);
+
+      await platform.documents.broadcast({ replace: [document] }, identity);
+
+      return document;
+
+      //############################################################
+      //This below disconnects the document editing..***
+
+      //return document;
+
+      //This is to disconnect the Document editing***
+      //############################################################
+    };
+
+    submit2PartyDoc()
+      .then((d) => {
+        let returnedDoc = d.toJSON();
+
+        returnedDoc.payGroupId = Identifier.from(
+          returnedDoc.payGroupId,
+          "base64"
+        ).toJSON();
+
+        console.log("Edited ChatDoc:\n", returnedDoc);
+
+        let editedChatDocs = this.state.selectedPayGroupChatDocs;
+
+        editedChatDocs.splice(this.state.chatDocToEditIndex, 1, returnedDoc);
+
+        this.setState(
+          {
+            selectedPayGroupChatDocs: editedChatDocs,
+            isLoadingPayGroupMsgs: false,
+          },
+          () => this.loadIdentityCredits()
+        );
+      })
+      .catch((e) => {
+        console.error("Something went wrong with ChatDoc Edit:\n", e);
+        this.setState({
+          isLoadingPayGroupMsgs: false,
+        });
+      })
+      .finally(() => client.disconnect());
+  };
+
+  showAddLikeToChatDocModal = (theMessageObjectLiked, theSharedSecret) => {
+    // need to also pass the like msg identifier, first 4 of owner and timeStamp? ->
+
+    //Need to find the latest ChatDoc -> filter and then sort and let the earliest
+    let yourChatDocs = this.state.selectedPayGroupChatDocs.filter((x) => {
+      return x.$ownerId === this.state.identity;
+    });
+
+    let yourLatestChatDoc;
+    if (yourChatDocs.length === 1) {
+      yourLatestChatDoc = yourChatDocs[0];
+    } else {
+      //Do Later
+      // order then pick the first one ->
+      yourLatestChatDoc = yourChatDocs[0];
+    }
+
+    let chatDocIndex = this.state.selectedPayGroupChatDocs.findIndex((chat) => {
+      return chat.$id === yourLatestChatDoc.$id;
+    });
+
+    //let likeIdentifier = this.state.messageObjectLiked
+
+    console.log(
+      "msgIdentifier: ",
+      theMessageObjectLiked.owner.slice(0, 4) +
+        theMessageObjectLiked.time.toString().slice(0, -3)
+    );
+
+    this.setState({
+      sharedSecret: theSharedSecret,
+
+      messageObjectLiked: theMessageObjectLiked,
+      chatDocToEdit: yourLatestChatDoc,
+      chatDocToEditIndex: chatDocIndex, //<- Need this for the editingfunction!!
+
+      presentModal: "ConfirmAddLikeModal",
+      isModalShowing: true,
+    });
+  };
+
+  decideMsgNumOrNewDoc4LIKE = () => {
+    //this.state.chatDocToEdit
+
+    //msg1
+    if (this.state.chatDocToEdit.msg1.length < 2000) {
+      this.editAddLikeToChatDoc("msg1");
+    }
+    //msg2
+    else if (this.state.chatDocToEdit.msg2.length < 2000) {
+      this.editAddLikeToChatDoc("msg2");
+    }
+    //msg3
+    else if (this.state.chatDocToEdit.msg3.length < 2000) {
+      this.editAddLikeToChatDoc("msg3");
+    }
+    //msg4
+    else if (this.state.chatDocToEdit.msg4.length < 2000) {
+      this.editAddLikeToChatDoc("msg4");
+    }
+    //msg5
+    else if (this.state.chatDocToEdit.msg5.length < 2000) {
+      this.editAddLikeToChatDoc("msg5");
+    }
+    //msg6
+    else if (this.state.chatDocToEdit.msg6.length < 2000) {
+      this.editAddLikeToChatDoc("msg6");
+    } else {
+      //createNewChatDoc() and start at msg1
+    }
+  };
+
+  editAddLikeToChatDoc = (theMsgNum) => {
+    this.setState({
+      isLoadingPayGroupMsgs: true,
+    });
+
+    const client = new Dash.Client(
+      dapiClient(
+        this.state.whichNetwork,
+        this.state.mnemonic,
+        this.state.skipSynchronizationBeforeHeight
+      )
+    );
+
+    let msgIdentifier =
+      this.state.messageObjectLiked.owner.slice(0, 4) +
+      this.state.messageObjectLiked.time.toString().slice(0, -3);
+
+    let msgLikeArraysToDecrypt;
+
+    //change decryptedMsgArray -> decryptedMsgObject
+    //let decryptedMsgArray = [];
+    let decryptedMsgLikeObject = { msgs: [], likes: [] };
+
+    if (this.state.chatDocToEdit[theMsgNum] !== "") {
+      msgLikeArraysToDecrypt = this.state.chatDocToEdit[theMsgNum];
+
+      decryptedMsgLikeObject = DecryptChatDoc4Edit(
+        msgLikeArraysToDecrypt,
+        this.state.sharedSecret
+      );
+
+      decryptedMsgLikeObject = JSON.parse(decryptedMsgLikeObject);
+    }
+
+    //Previous
+    //msg1 = [{msg:.., time:...}]
+
+    //Change to
+    //msg1 = {msgs:[{msg:.., time:...}],likes:[]}
+
+    decryptedMsgLikeObject.likes.push(msgIdentifier);
+
+    console.log("MsgLikeObjectToEncrypt: ", decryptedMsgLikeObject);
+
+    //SEND OBJECT TO ENCRYPT ->
+
+    let encrypted4ChatDoc = EncryptChatDoc4Edit(
+      JSON.stringify(decryptedMsgLikeObject),
       this.state.sharedSecret
     );
 
@@ -3516,7 +4258,7 @@ class App extends React.Component {
 
       //CHANGE THE DOCUMENT.SET ->
 
-      document.set("msg1", encrypted4ChatDoc);
+      document.set(theMsgNum, encrypted4ChatDoc);
 
       await platform.documents.broadcast({ replace: [document] }, identity);
       return document;
@@ -3561,6 +4303,26 @@ class App extends React.Component {
       })
       .finally(() => client.disconnect());
   };
+
+  //Pay Group Pmts
+
+  handlePayGroupPmtsBackArrow = () => {
+    this.setState(
+      {
+        selectedDapp: "PayGroup",
+        isLoadingPayGroupMsgs: true,
+        InitialPullPayGroupMsgs: true,
+        selectedPayGroupChatDocs: [],
+      },
+      () => this.pullInitialTriggerPAYGROUPMSGS()
+    );
+  };
+
+  //payInit Doc create
+
+  //payDoc create - Response create
+
+  //last person - Submit TX
 
   /* PAY GROUP FUNCTIONS^^^^^
    *
@@ -6221,6 +6983,501 @@ class App extends React.Component {
    *                              ####
    *                            ###############
    *
+   *    ################
+   *    ###          ###
+   *    ################
+   *    ###
+   *    ###
+   */
+  //PUBLIC SPACES FUNCTIONS
+
+  pullInitialTriggerPUBLICSPACES = () => {
+    if (this.state.InitialPullPUBLICSPACES) {
+      this.getYourPublicSpaces();
+      this.getActivePublicSpaces();
+      this.setState({
+        InitialPullPUBLICSPACES: false, //ADD
+      });
+    }
+  };
+
+  // hidePublicSpacePage = () => {
+  //   this.setState({
+  //     isPublicSpaceShowing: false,
+  //   });
+  // };
+
+  // showPublicSpacesPage = (groupName) => {
+  //   this.setState({
+  //     selectedDapp: "Public Spaces", // ADDED THIS FOR THE EVENT FUNCTIONALITY
+  //     isModalShowing: false, // ADDED THIS FOR THE EVENT FUNCTIONALITY
+  //     selectedGroup: groupName,
+  //     isGroupShowing: true,
+  //   });
+  // };
+
+  getYourPublicSpaces = (theIdentity) => {
+    this.setState({
+      isLoadingGroups: true,
+    });
+
+    const client = new Dash.Client(dapiClientNoWallet(this.state.whichNetwork));
+
+    //DGTInvite Query
+    const getDocuments = async () => {
+      return client.platform.documents.get("DGTContract.dgtinvite", {
+        where: [
+          ["toId", "==", theIdentity],
+          //["$createdAt", "<=", Date.now()],
+        ],
+        orderBy: [["$createdAt", "desc"]],
+      });
+    };
+
+    getDocuments()
+      .then((d) => {
+        if (d.length === 0) {
+          console.log("There are no ActivePublicSpaces");
+          this.setState({
+            isLoadingGroups: false,
+          });
+        } else {
+          let docArray = [];
+
+          for (const n of d) {
+            let returnedDoc = n.toJSON();
+            //console.log("Invite:\n", returnedDoc);
+            returnedDoc.toId = Identifier.from(
+              returnedDoc.toId,
+              "base64"
+            ).toJSON();
+            //console.log("newInvite:\n", returnedDoc);
+            docArray = [...docArray, returnedDoc];
+          }
+
+          this.getYourPublicSpacesNames(docArray);
+        }
+      })
+      .catch((e) => console.error("Something went wrong:\n", e))
+
+      .finally(() => client.disconnect());
+  };
+
+  getYourPublicSpacesNames = (docArray) => {
+    //console.log("Calling getNamesforDGTInvites");
+
+    const client = new Dash.Client(dapiClientNoWallet(this.state.whichNetwork));
+
+    let arrayOfOwnerIds = docArray.map((doc) => {
+      return doc.$ownerId;
+    });
+
+    let setOfOwnerIds = [...new Set(arrayOfOwnerIds)];
+
+    arrayOfOwnerIds = [...setOfOwnerIds];
+
+    const getNameDocuments = async () => {
+      return client.platform.documents.get("DPNSContract.domain", {
+        where: [["records.identity", "in", arrayOfOwnerIds]],
+        orderBy: [["records.identity", "asc"]],
+      });
+    };
+
+    getNameDocuments()
+      .then((d) => {
+        if (d.length === 0) {
+          console.log("No DPNS domain documents retrieved.");
+        }
+
+        let nameDocArray = [];
+
+        for (const n of d) {
+          //console.log("NameDoc:\n", n.toJSON());
+
+          nameDocArray = [n.toJSON(), ...nameDocArray];
+        }
+
+        this.setState({
+          dgtInvitesNames: nameDocArray,
+          dgtInvites: docArray,
+          isLoadingGroups: false,
+        });
+      })
+      .catch((e) => {
+        console.error("Something went wrong:\n", e);
+        this.setState({
+          isLoadingGroups: false,
+        });
+      })
+      .finally(() => client.disconnect());
+  };
+
+  getActivePublicSpaces = () => {
+    const client = new Dash.Client(dapiClientNoWallet(this.state.whichNetwork));
+
+    const getDocuments = async () => {
+      return client.platform.documents.get("PublicSpacesContract.dgtmsg", {
+        limit: 80,
+        where: [["$createdAt", "<=", Date.now()]],
+        orderBy: [["$createdAt", "desc"]],
+      });
+    };
+
+    getDocuments()
+      .then((d) => {
+        if (d.length === 0) {
+          this.setState({
+            isLoadingActiveGroups: false,
+          });
+        } else {
+          let docArray = [];
+
+          // for (const n of d) {
+          //   let returnedDoc = n.toJSON();
+          //   //console.log("Doc:\n", returnedDoc);
+          //   returnedDoc.msgId = Identifier.from(
+          //     returnedDoc.msgId,
+          //     "base64"
+          //   ).toJSON();
+          //   //console.log("newDoc:\n", returnedDoc);
+          //   docArray = [...docArray, returnedDoc];
+          // }
+
+          for (const n of d) {
+            //console.log("Invite Documents:\n", n.toJSON());
+            docArray = [...docArray, n.toJSON()];
+            //DOES ANY PART OF DOCUMENT NEED CONVERTING? LIKE THE TOID? ->
+          }
+
+          let arrayOfGroups = docArray.map((doc) => {
+            return doc.group;
+          });
+
+          let setOfGroups = [...new Set(arrayOfGroups)];
+
+          let arrayOfUniqueGroups = [...setOfGroups];
+
+          let uniqueActiveGroups = arrayOfUniqueGroups.map((grpName) => {
+            return docArray.find((doc) => doc.group === grpName);
+          });
+
+          this.setState({
+            dgtActiveGroups: uniqueActiveGroups,
+            isLoadingActiveGroups: false,
+          });
+        }
+      })
+      .catch((e) => console.error("Something went wrong:\n", e))
+
+      .finally(() => client.disconnect());
+  };
+
+  getActivePublicSpacesNames = (docArray) => {
+    //console.log("Calling getNamesforDGTInvites");
+
+    const client = new Dash.Client(dapiClientNoWallet(this.state.whichNetwork));
+
+    let arrayOfOwnerIds = docArray.map((doc) => {
+      return doc.$ownerId;
+    });
+
+    let setOfOwnerIds = [...new Set(arrayOfOwnerIds)];
+
+    arrayOfOwnerIds = [...setOfOwnerIds];
+
+    const getNameDocuments = async () => {
+      return client.platform.documents.get("DPNSContract.domain", {
+        where: [["records.identity", "in", arrayOfOwnerIds]],
+        orderBy: [["records.identity", "asc"]],
+      });
+    };
+
+    getNameDocuments()
+      .then((d) => {
+        if (d.length === 0) {
+          console.log("No DPNS domain documents retrieved.");
+        }
+
+        let nameDocArray = [];
+
+        for (const n of d) {
+          //console.log("NameDoc:\n", n.toJSON());
+
+          nameDocArray = [n.toJSON(), ...nameDocArray];
+        }
+
+        this.setState({
+          dgtInvitesNames: nameDocArray,
+          dgtInvites: docArray,
+          isLoadingGroups: false,
+        });
+      })
+      .catch((e) => {
+        console.error("Something went wrong:\n", e);
+        this.setState({
+          isLoadingGroups: false,
+        });
+      })
+      .finally(() => client.disconnect());
+  };
+
+  //if not a DPNS or
+  decideSelectedSpace = (theSpaceLabel) => {
+    // DPNS or non-DPNS
+    //what is query for DPNS Space? ->
+    // 1) get name for ownerid , get spaces by ownerid, display text
+    //      so same as for own spaces
+    // but also spaces withe the label so can see all sent to owner as well ->
+  };
+
+  getSelectedPublicSpace = () => {};
+
+  getSelectedPublicSpaceNames = (docArray) => {
+    //console.log("Calling getNamesforDGTInvites");
+
+    const client = new Dash.Client(dapiClientNoWallet(this.state.whichNetwork));
+
+    let arrayOfOwnerIds = docArray.map((doc) => {
+      return doc.$ownerId;
+    });
+
+    let setOfOwnerIds = [...new Set(arrayOfOwnerIds)];
+
+    arrayOfOwnerIds = [...setOfOwnerIds];
+
+    const getNameDocuments = async () => {
+      return client.platform.documents.get("DPNSContract.domain", {
+        where: [["records.identity", "in", arrayOfOwnerIds]],
+        orderBy: [["records.identity", "asc"]],
+      });
+    };
+
+    getNameDocuments()
+      .then((d) => {
+        if (d.length === 0) {
+          console.log("No DPNS domain documents retrieved.");
+        }
+
+        let nameDocArray = [];
+
+        for (const n of d) {
+          //console.log("NameDoc:\n", n.toJSON());
+
+          nameDocArray = [n.toJSON(), ...nameDocArray];
+        }
+
+        this.setState({
+          dgtInvitesNames: nameDocArray,
+          dgtInvites: docArray,
+          isLoadingGroups: false,
+        });
+      })
+      .catch((e) => {
+        console.error("Something went wrong:\n", e);
+        this.setState({
+          isLoadingGroups: false,
+        });
+      })
+      .finally(() => client.disconnect());
+  };
+
+  // Create OR edit.
+  handleSelectedJoinPublicSpace = (publicSpaceName) => {
+    this.setState(
+      {
+        selectedPublicSpace: publicSpaceName,
+      },
+      () => this.showModal("JoinPublicSpaceModal")
+    );
+  };
+
+  createPublicSpaceDoc = (newGroup) => {
+    //Its just a name.
+    this.setState({
+      isLoadingGroups: true,
+    });
+
+    //Makes sure I dont send 2nd invite to myself
+
+    let document = this.state.dgtInvites.find((invite) => {
+      return (
+        newGroup === invite.group && invite.$ownerId === this.state.identity
+      );
+    });
+
+    if (document !== undefined) {
+      this.setState({
+        isLoadingGroups: false,
+      });
+    } else {
+      const client = new Dash.Client(
+        dapiClient(
+          this.state.whichNetwork,
+          this.state.mnemonic,
+          this.state.skipSynchronizationBeforeHeight
+        )
+      );
+
+      const submitInvite = async () => {
+        const { platform } = client;
+
+        //const identity = await platform.identities.get(this.state.identity); // Your identity ID
+        //const identity = this.state.identityRaw;
+        let identity = "";
+        if (this.state.identityRaw !== "") {
+          identity = this.state.identityRaw;
+        } else {
+          identity = await platform.identities.get(this.state.identity);
+        } // Your identity ID
+
+        const docProperties = {
+          group: newGroup,
+          //toId: Buffer.from(Identifier.from(this.state.identity)),
+          // handle on return or what? did i change it right?
+          toId: this.state.identity,
+          dgt: "self",
+        };
+
+        // Create the note document
+        const dgtDocument = await platform.documents.create(
+          "DGTContract.dgtinvite",
+          identity,
+          docProperties
+        );
+
+        const documentBatch = {
+          create: [dgtDocument], // Document(s) to create
+        };
+        // Sign and submit the document(s)
+        await platform.documents.broadcast(documentBatch, identity);
+        return dgtDocument;
+      };
+
+      submitInvite()
+        .then((d) => {
+          let submittedDoc = d.toJSON();
+
+          this.setState(
+            {
+              dgtInvites: [submittedDoc, ...this.state.dgtInvites],
+              dgtInvitesForEvents: [
+                submittedDoc,
+                ...this.state.dgtInvitesForEvents,
+              ],
+              isLoadingGroups: false,
+            },
+            () => this.loadIdentityCredits()
+          );
+        })
+        .catch((e) => {
+          console.error("Something went wrong:\n", e);
+          this.setState({
+            isLoadingGroups: false,
+            errorGroupsAdd: true, //Needs to add to state and handle
+          });
+        })
+        .finally(() => client.disconnect());
+    } // This is the close of the else statment
+  };
+
+  editPublicSpaceDoc = () => {};
+
+  handleDeletePublicSpace = (publicSpaceName) => {
+    this.setState(
+      {
+        selectedPublicSpace: publicSpaceName,
+      },
+      () => this.showModal("DeletePublicSpaceModal")
+    );
+  };
+
+  deletePublicSpaceDoc = (groupRemove) => {
+    this.setState({
+      isLoadingGroups: true,
+      isGroupShowing: false,
+    });
+
+    //create a group to remove array for before display ->
+    //Find the groupName of the doc and return the docId -> DONE
+
+    let documentJSON = this.state.dgtInvites.find((invite) => {
+      return (
+        groupRemove === invite.group && invite.$ownerId === this.state.identity
+      );
+    });
+    console.log(documentJSON);
+
+    //let documentId = document.$id;
+
+    const client = new Dash.Client(
+      dapiClient(
+        this.state.whichNetwork,
+        this.state.mnemonic,
+        this.state.skipSynchronizationBeforeHeight
+      )
+    );
+
+    const deleteDocument = async () => {
+      const { platform } = client;
+      const identity = this.state.identityRaw;
+
+      const [document] = await client.platform.documents.get(
+        "DGTContract.dgtinvite",
+        { where: [["$id", "==", documentJSON.$id]] }
+      );
+
+      // Sign and submit the document delete transition
+      await platform.documents.broadcast({ delete: [document] }, identity);
+      return document;
+    };
+
+    deleteDocument()
+      .then((d) => {
+        console.log("Document deleted:\n", d.toJSON());
+
+        let indexToDelete = this.state.dgtInvites.findIndex((invite) => {
+          return invite.$id === d.toJSON().$id && invite.dgt === "self";
+        });
+
+        let mutableArray = this.state.dgtInvites;
+        mutableArray.splice(indexToDelete, 1);
+
+        this.setState({
+          dgtInvites: mutableArray,
+          dgtInvitesForEvents: mutableArray,
+          isLoadingGroups: false,
+        });
+      })
+      .catch((e) => {
+        console.error("Something went wrong:\n", e);
+        this.setState({
+          isLoadingGroups: false,
+          //Add Error alert ->
+        });
+      })
+      .finally(() => client.disconnect());
+  };
+
+  /*
+  * PUBLIC SPACES FUNCTIONS^^^^
+                                        ################
+   *                                    ###          ###
+   *                                    ################
+   *                                    ###          
+   *                                    ###  
+   * 
+   *    
+   *##       ###    ###
+   * ###    ####   ##
+   *  ###  ## ## ###
+   *   ## ##  ####
+   *    ###   ###
+   
+
+   */ //WALLET FUNCTIONS
+
+  /*
+   *
    *
    * ###      ###    ###
    *  ###    ####   ##
@@ -6647,6 +7904,38 @@ class App extends React.Component {
           </Row>
         </Container>
         <Container className="g-0">
+          {this.state.selectedDapp === "Public Spaces" ? (
+            <>
+              <PublicSpacesPage
+                mnemonic={this.state.mnemonic}
+                whichNetwork={this.state.whichNetwork}
+                isLoginComplete={isLoginComplete}
+                isLoadingPayGroups={this.state.isLoadingPayGroups}
+                identity={this.state.identity}
+                identityInfo={this.state.identityInfo}
+                uniqueName={this.state.uniqueName}
+                mode={this.state.mode}
+                showModal={this.showModal}
+                pullInitialTriggerPAYGROUPS={this.pullInitialTriggerPAYGROUPS}
+                isPayGroupsRefreshReady={this.state.isPayGroupsRefreshReady}
+                DisplayPayGroupsOrder={this.state.DisplayPayGroupsOrder}
+                handlePayGroupsOrderFilter={this.handlePayGroupsOrderFilter}
+                handleRefresh_PayGroups={this.handleRefresh_PayGroups}
+                accountBalance={this.state.accountBalance}
+                accountHistory={this.state.accountHistory}
+                handleSelectedDapp={this.handleSelectedDapp}
+                YourPayGroupsPubKeyDoc={this.state.YourPayGroupsPubKeyDoc}
+                YourPayGroups={this.state.YourPayGroups}
+                YourPayGroupsMbrs={this.state.YourPayGroupsMbrs}
+                YourPayGroupsNames={this.state.YourPayGroupsNames}
+                YourPayGroupsPubKeys={this.state.YourPayGroupsPubKeys}
+                decideFinalizeOrGoToPage={this.decideFinalizeOrGoToPage}
+              />
+            </>
+          ) : (
+            <></>
+          )}
+
           {this.state.selectedDapp === "Pay Groups" ? (
             <>
               <PayGroupsPage
@@ -6691,8 +7980,9 @@ class App extends React.Component {
                 mode={this.state.mode}
                 showModal={this.showModal}
                 showAddMessageToChatDocModal={this.showAddMessageToChatDocModal}
+                showAddLikeToChatDocModal={this.showAddLikeToChatDocModal}
                 handleSelectedDapp={this.handleSelectedDapp}
-                handlePayGroupBackArrow={this.handlePayGroupBackArrow}
+                handlePayGroupMsgsBackArrow={this.handlePayGroupMsgsBackArrow}
                 //
                 pullInitialTriggerPAYGROUPMSGS={
                   this.pullInitialTriggerPAYGROUPMSGS
@@ -6727,10 +8017,12 @@ class App extends React.Component {
                 identityInfo={this.state.identityInfo}
                 uniqueName={this.state.uniqueName}
                 mode={this.state.mode}
+                whichNetwork={this.state.whichNetwork}
                 showModal={this.showModal}
-                showAddMessageToChatDocModal={this.showAddMessageToChatDocModal}
+                // showAddMessageToChatDocModal={this.showAddMessageToChatDocModal}
                 handleSelectedDapp={this.handleSelectedDapp}
-                //handlePayGroupBackArrow={this.handlePayGroupBackArrow}
+                //handlePayGroupPmtsBackArrow={this.handlePayGroupPmtsBackArrow}
+                YourPGsMultiSigUTXOs={this.state.YourPGsMultiSigUTXOs}
                 //
                 // pullInitialTriggerPAYGROUPMSGS={
                 //   this.pullInitialTriggerPAYGROUPMSGS
@@ -6739,15 +8031,44 @@ class App extends React.Component {
                 //   this.state.isPayGroupsMsgsRefreshReady
                 // }
                 //
-                // decideStartOrNotPayGroupsMsgs={
-                //   this.decideStartOrNotPayGroupsMsgs
-                // }
+                showAcceptMultiSigAcctModal={this.showAcceptMultiSigAcctModal}
                 //
                 selectedPayGroupDoc={this.state.selectedPayGroupDoc}
                 selectedPayGroupNameDocs={this.state.selectedPayGroupNameDocs}
                 selectedPayGroupMbrDocs={this.state.selectedPayGroupMbrDocs}
                 selectedPayGroupECDHDocs={this.state.selectedPayGroupECDHDocs}
-                selectedPayGroupChatDocs={this.state.selectedPayGroupChatDocs}
+                //selectedPayGroupChatDocs={this.state.selectedPayGroupChatDocs}
+                //
+              />
+            </>
+          ) : (
+            <></>
+          )}
+
+          {this.state.selectedDapp === "PayGroupPmtsCreateMultisig" ? (
+            <>
+              <SelectedPayGroupPmtsCreateMultisig
+                isLoadingPayGroups={this.state.isLoadingPayGroups}
+                isLoadingPayGroupMsgs={this.state.isLoadingPayGroupMsgs}
+                mnemonic={this.state.mnemonic}
+                identity={this.state.identity}
+                identityInfo={this.state.identityInfo}
+                uniqueName={this.state.uniqueName}
+                mode={this.state.mode}
+                showModal={this.showModal}
+                showConfirmCreateMultiSigAcctModal={
+                  this.showConfirmCreateMultiSigAcctModal
+                }
+                handleSelectedDapp={this.handleSelectedDapp}
+                //USE ^^ HERE
+                //handlePayGroupPmtsBackArrow={this.handlePayGroupPmtsBackArrow}
+                //
+
+                selectedPayGroupDoc={this.state.selectedPayGroupDoc}
+                // selectedPayGroupNameDocs={this.state.selectedPayGroupNameDocs}
+                // selectedPayGroupMbrDocs={this.state.selectedPayGroupMbrDocs}
+                // selectedPayGroupECDHDocs={this.state.selectedPayGroupECDHDocs}
+                // selectedPayGroupChatDocs={this.state.selectedPayGroupChatDocs}
                 //
               />
             </>
@@ -6775,7 +8096,7 @@ class App extends React.Component {
                   this.pullInitialTriggerJoinPAYGROUPS
                 }
                 //
-                isPayGroupsRefreshReady={this.state.isPayGroupsRefreshReady}
+                isJoinGroupsRefreshReady={this.state.isJoinGroupsRefreshReady}
                 handleRefresh_JoinGroups={this.handleRefresh_JoinGroups}
                 //
                 YourPayGroups={this.state.YourPayGroups}
@@ -7054,20 +8375,6 @@ class App extends React.Component {
          *      ###
          *      ###            */}
 
-        {this.state.isModalShowing &&
-        this.state.presentModal === "ConfirmAddMessageModal" ? (
-          <ConfirmAddMessageModal
-            editAddMessageToChatDoc={this.editAddMessageToChatDoc}
-            messageToAdd={this.state.messageToAdd}
-            isModalShowing={this.state.isModalShowing}
-            hideModal={this.hideModal}
-            mode={this.state.mode}
-            closeTopNav={this.closeTopNav}
-          />
-        ) : (
-          <></>
-        )}
-
         {/* {this.state.isModalShowing &&
         this.state.presentModal === "ComingSoonModal" ? (
           <ComingSoonModal
@@ -7079,6 +8386,70 @@ class App extends React.Component {
         ) : (
           <></>
         )} */}
+
+        {this.state.isModalShowing &&
+        this.state.presentModal === "ConfirmCreateMultiSigAcctModal" ? (
+          <ConfirmCreateMultiSigAcctModal
+            whichNetwork={this.state.whichNetwork}
+            uniqueName={this.state.uniqueName}
+            multiSigNumOfMbrs={this.state.multiSigNumOfMbrs}
+            multiSigLabel={this.state.multiSigLabel}
+            editPayGroupMbrDoc4MultiSigAcct={
+              this.editPayGroupMbrDoc4MultiSigAcct
+            }
+            isModalShowing={this.state.isModalShowing}
+            hideModal={this.hideModal}
+            mode={this.state.mode}
+            closeTopNav={this.closeTopNav}
+          />
+        ) : (
+          <></>
+        )}
+
+        {this.state.isModalShowing &&
+        this.state.presentModal === "ConfirmAcceptMultiSigAcctModal" ? (
+          <ConfirmAcceptMultiSigAcctModal
+            whichNetwork={this.state.whichNetwork}
+            uniqueName={this.state.uniqueName}
+            multiSigNumOfMbrs={this.state.multiSigNumOfMbrs}
+            multiSigLabel={this.state.multiSigLabel}
+            editPGMbrDocAcceptMultiSigAcct={this.editPGMbrDocAcceptMultiSigAcct}
+            isModalShowing={this.state.isModalShowing}
+            hideModal={this.hideModal}
+            mode={this.state.mode}
+            closeTopNav={this.closeTopNav}
+          />
+        ) : (
+          <></>
+        )}
+
+        {this.state.isModalShowing &&
+        this.state.presentModal === "ConfirmAddLikeModal" ? (
+          <ConfirmAddLikeModal
+            decideMsgNumOrNewDoc4LIKE={this.decideMsgNumOrNewDoc4LIKE}
+            messageObjectLiked={this.state.messageObjectLiked}
+            isModalShowing={this.state.isModalShowing}
+            hideModal={this.hideModal}
+            mode={this.state.mode}
+            closeTopNav={this.closeTopNav}
+          />
+        ) : (
+          <></>
+        )}
+
+        {this.state.isModalShowing &&
+        this.state.presentModal === "ConfirmAddMessageModal" ? (
+          <ConfirmAddMessageModal
+            decideMsgNumOrNewDoc4MSG={this.decideMsgNumOrNewDoc4MSG}
+            messageToAdd={this.state.messageToAdd}
+            isModalShowing={this.state.isModalShowing}
+            hideModal={this.hideModal}
+            mode={this.state.mode}
+            closeTopNav={this.closeTopNav}
+          />
+        ) : (
+          <></>
+        )}
 
         {this.state.isModalShowing &&
         this.state.presentModal === "RegisterPayGroupModal" ? (

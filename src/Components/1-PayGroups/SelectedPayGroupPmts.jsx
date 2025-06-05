@@ -10,11 +10,11 @@ import { IoMdArrowRoundBack } from "react-icons/io";
 import Spinner from "react-bootstrap/Spinner";
 import Button from "react-bootstrap/Button";
 //import Alert from "react-bootstrap/Alert";
-import handleDenomDisplay from "../UnitDisplay";
+//import handleDenomDisplay from "../UnitDisplay";
 
 import CreditsOnPage from "../CreditsOnPage";
 
-//import CreateJoinCards from "./CreateJoinCards";
+import SlctdPGPmtsMultiSigs from "./SlctdPGPmtsMultiSigs";
 
 import "../../App.css";
 
@@ -60,13 +60,15 @@ class SelectedPayGroupPmts extends React.Component {
                 <>
                   <div className="d-grid gap-2" style={{ margin: "1rem" }}>
                     <Button
-                      variant="primary"
+                      variant="success"
                       size="lg"
                       onClick={() =>
-                        this.props.handleSelectedDapp("Create Pay Group")
+                        this.props.handleSelectedDapp(
+                          "PayGroupPmtsCreateMultisig"
+                        )
                       }
                     >
-                      <b>Create Pay Group</b>
+                      <b>Create Multisig</b>
                     </Button>
                   </div>
                 </>
@@ -74,16 +76,16 @@ class SelectedPayGroupPmts extends React.Component {
                 <></>
               )} */}
 
-              <div
+              {/* <div
                 //className="cardTitle"
                 style={{ textAlign: "center", marginTop: "2rem" }}
               >
                 <h2>
                   <b>Coming Soon!</b>
                 </h2>
-              </div>
+              </div> */}
 
-              {/* {this.props.isLoadingPayGroups ? (
+              {this.props.isLoadingPayGroups ? (
                 <>
                   <p></p>
                   <div id="spinner">
@@ -95,15 +97,15 @@ class SelectedPayGroupPmts extends React.Component {
                 </>
               ) : (
                 <></>
-              )} */}
+              )}
             </Col>
           </Row>
 
-          {/* {this.props.isLoadingPayGroups ? (
+          {this.props.isLoadingPayGroups ? (
             <></>
           ) : (
             <>
-              <CreateJoinCards
+              <SlctdPGPmtsMultiSigs
                 mnemonic={this.props.mnemonic}
                 isLoadingPayGroups={this.props.isLoadingPayGroups}
                 //
@@ -111,24 +113,27 @@ class SelectedPayGroupPmts extends React.Component {
                 // handlePayGroupsOrderFilter={
                 //   this.props.handlePayGroupsOrderFilter
                 // }
+                handleSelectedDapp={this.props.handleSelectedDapp}
                 //
                 whichNetwork={this.props.whichNetwork}
                 mode={this.props.mode}
                 identity={this.props.identity}
                 uniqueName={this.props.uniqueName}
                 //
-                showConfirmJoinPayGroupModal={
-                  this.props.showConfirmJoinPayGroupModal
+                YourPGsMultiSigUTXOs={this.props.YourPGsMultiSigUTXOs}
+                //
+                showAcceptMultiSigAcctModal={
+                  this.props.showAcceptMultiSigAcctModal
                 }
                 //
-                YourPayGroups={this.props.YourPayGroups}
-                JoinPayGroups={this.props.JoinPayGroups}
-                //JoinPayGroupsMbrs={this.props.JoinPayGroupsMbrs}
-                JoinPayGroupsNames={this.props.JoinPayGroupsNames}
-                JoinPayGroupsPubKeys={this.props.JoinPayGroupsPubKeys}
+                selectedPayGroupDoc={this.props.selectedPayGroupDoc}
+                selectedPayGroupNameDocs={this.props.selectedPayGroupNameDocs}
+                selectedPayGroupMbrDocs={this.props.selectedPayGroupMbrDocs}
+                selectedPayGroupECDHDocs={this.props.selectedPayGroupECDHDocs}
+                //selectedPayGroupChatDocs={this.props.selectedPayGroupChatDocs}
               />
             </>
-          )} */}
+          )}
         </div>
       </>
     );

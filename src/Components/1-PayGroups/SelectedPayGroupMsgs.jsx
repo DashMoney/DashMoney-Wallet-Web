@@ -2,6 +2,10 @@ import React from "react";
 import Card from "react-bootstrap/Card";
 import formatDate from "../TimeDisplayLong";
 
+import Button from "react-bootstrap/Button";
+
+import SelectedPayGroupMsg from "./SelectedPayGroupMsg";
+
 class SelectedPayGroupMsgs extends React.Component {
   constructor(props) {
     super(props);
@@ -10,19 +14,11 @@ class SelectedPayGroupMsgs extends React.Component {
     };
   }
 
-  handleNameClick = () => {
-    navigator.clipboard.writeText(`${this.props.tuple[0]}`);
-    this.setState({
-      copiedName: true,
-    });
-  };
-
   render() {
     //PULL THE MSGS FROM ALL ->
+    // chatMsgs={chatMsgs}
 
     let messages = [];
-
-    //Put message from You a little right and other a little to the left ->
 
     // this.props.flatMsgObjArray.forEach((msg) => {
     //   if (msg.msg !== "") {
@@ -42,6 +38,8 @@ class SelectedPayGroupMsgs extends React.Component {
 
     //Use NameDocs to put labels on ->
 
+    let orderedMsgsArray = [];
+
     orderedMsgs.forEach((obj) => {
       let msgAuthor = this.props.selectedPayGroupNameDocs.find((nameDoc) => {
         return nameDoc.$ownerId === obj.owner;
@@ -52,49 +50,74 @@ class SelectedPayGroupMsgs extends React.Component {
           $ownerId: obj.owner,
         };
       }
-      obj.label = msgAuthor.label;
+      orderedMsgsArray.push({
+        label: msgAuthor.label,
+        msg: obj.msg,
+        time: obj.time,
+        owner: obj.owner,
+      });
+      // obj.label = msgAuthor.label;
     });
 
-    messages = orderedMsgs.map((msg, index) => {
-      if (msg.owner === this.props.identity) {
-        return (
-          <div index={index} key={index} style={{ paddingLeft: "2rem" }}>
-            <div
-              //className="BottomThinBorder"
-              className="ThreadBorder"
-              style={{ paddingTop: ".3rem", marginBottom: ".3rem" }}
-            ></div>
+    // likeTuples={likeTuples}
+    //     [owner,msgIdentifier],[..],...]
 
-            <Card.Title className="cardTitle">
-              <b>{this.props.uniqueName}</b>
+    // yourLikes={yourLikes}
+    //     array of likeIdentifier
 
-              <span className="textsmaller" style={{ paddingRight: "2rem" }}>
-                {formatDate(msg.time, this.props.today, this.props.yesterday)}
-              </span>
-            </Card.Title>
-            <Card.Text style={{ whiteSpace: "pre-wrap" }}>{msg.msg}</Card.Text>
-          </div>
-        );
-      } else {
-        return (
-          <div index={index} key={index} style={{ paddingRight: "2rem" }}>
-            <div
-              //className="BottomThinBorder"
-              className="ThreadBorder"
-              style={{ paddingTop: ".3rem", marginBottom: ".3rem" }}
-            ></div>
+    let likeObjsArray = []; // owner, label, likeIdentifier
 
-            <Card.Title className="cardTitle">
-              <b style={{ color: "#008de4" }}>{msg.label}</b>
+    //Use NameDocs to put labels on -> Do for likes too ->
+    //Add NameDocs to include in List
 
-              <span className="textsmaller">
-                {formatDate(msg.time, this.props.today, this.props.yesterday)}
-              </span>
-            </Card.Title>
-            <Card.Text style={{ whiteSpace: "pre-wrap" }}>{msg.msg}</Card.Text>
-          </div>
-        );
+    let nameDocs = this.props.selectedPayGroupNameDocs;
+
+    nameDocs.push({
+      label: this.props.uniqueName,
+      $ownerId: this.props.identity,
+    });
+
+    this.props.likeTuples.forEach((tuple) => {
+      let likeAuthor = this.props.selectedPayGroupNameDocs.find((nameDoc) => {
+        return nameDoc.$ownerId === tuple[0];
+      });
+      if (likeAuthor === undefined) {
+        likeAuthor = {
+          label: "No Name Avail",
+          $ownerId: tuple[0],
+        };
       }
+
+      likeObjsArray.push({
+        owner: tuple[0],
+        likeId: tuple[1],
+        label: likeAuthor.label,
+      });
+
+      // tuple.push = likeAuthor.label;
+      //UNLESS i JUST PUSH TO TUPLE SO NOW TRUPLE?
+      //     [owner,msgIdentifier,label],[..],...]
+    });
+
+    console.log("orderedMsgsArray: ", orderedMsgsArray);
+
+    messages = orderedMsgsArray.map((msg, index) => {
+      //move to msg component
+      return (
+        <SelectedPayGroupMsg
+          msg={msg}
+          theSecret={this.props.theSecret}
+          likeObjsArray={likeObjsArray}
+          yourLikes={this.props.yourLikes}
+          key={index}
+          index={index}
+          uniqueName={this.props.uniqueName}
+          today={this.props.today}
+          yesterday={this.props.yesterday}
+          identity={this.props.identity}
+          showAddLikeToChatDocModal={this.props.showAddLikeToChatDocModal}
+        />
+      );
     });
 
     return (

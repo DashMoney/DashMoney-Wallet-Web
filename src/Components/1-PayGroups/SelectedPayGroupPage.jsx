@@ -44,10 +44,13 @@ class SelectedPayGroupPage extends React.Component {
 
     // Put the Logic Here and NOT in the App.js Functions
     let isInitialMsgDoc = false;
+
     let chatMsgs = [];
     let sharedChatKey;
 
-    //OrderChatDocs
+    let chatLikesObjs = [];
+
+    let yourLikesObjs = [];
 
     //find a first doc from me
     let yourChatDoc = this.props.selectedPayGroupChatDocs.find((x) => {
@@ -79,6 +82,15 @@ class SelectedPayGroupPage extends React.Component {
         if (doc.msg3 !== "") {
           encryptedMsgs.push([doc.$ownerId, doc.msg3]);
         }
+        if (doc.msg4 !== "") {
+          encryptedMsgs.push([doc.$ownerId, doc.msg4]);
+        }
+        if (doc.msg5 !== "") {
+          encryptedMsgs.push([doc.$ownerId, doc.msg5]);
+        }
+        if (doc.msg6 !== "") {
+          encryptedMsgs.push([doc.$ownerId, doc.msg6]);
+        }
       });
       //Decrypt Msgs ->
       //msg should be Array of Objects
@@ -89,11 +101,46 @@ class SelectedPayGroupPage extends React.Component {
       // }
       //ADD isError ->
 
-      //NEED TO ADD MSGS BEFORE CAN DECRYPT.
-      chatMsgs = DecryptChatMsgs(encryptedMsgs, sharedChatKey).flat();
+      let chatMsgsTuples;
+      if (encryptedMsgs.length !== 0) {
+        chatMsgsTuples = DecryptChatMsgs(encryptedMsgs, sharedChatKey); //.flat();
+      } else {
+        chatMsgsTuples = [[], []];
+      }
 
-      // console.log("chatMsgs: ", chatMsgs);
+      //Changed to
+      //msg1 = {msgs:[{msg:.., time:...}],likes:[]}
+
+      //[decryptedMsgs, decryptedLikes]
+      //[[{msgObjs},{...}],[[tuples],[...]]]
+
+      //CAN'T FLAT YET BC IT IS MSG OBJECT NOW ->
+
+      chatMsgs = chatMsgsTuples[0].flat();
+
+      console.log("chatMsgs: ", chatMsgs);
+
+      chatLikesObjs = chatMsgsTuples[1].flat();
+
+      console.log("chatLikesObjs: ", chatLikesObjs);
+
+      yourLikesObjs = chatLikesObjs.filter((likeTup) => {
+        return likeTup[0] === this.props.identity;
+      });
+
+      //yourLikesObjs.flat();
+      console.log("yourLikesObjs: ", yourLikesObjs);
     }
+
+    let likeTuples = [...chatLikesObjs];
+
+    console.log("likeTuples: ", likeTuples);
+
+    let yourLikes = yourLikesObjs.map((x) => {
+      return x[1];
+    });
+
+    console.log("yourLikes: ", yourLikes);
 
     return (
       <>
@@ -109,7 +156,7 @@ class SelectedPayGroupPage extends React.Component {
               <>
                 <Button
                   variant="primary"
-                  onClick={() => this.props.handlePayGroupBackArrow()}
+                  onClick={() => this.props.handlePayGroupMsgsBackArrow()}
                 >
                   <IoMdArrowRoundBack size={28} />
                 </Button>
@@ -182,8 +229,14 @@ class SelectedPayGroupPage extends React.Component {
                     yesterday={yesterday}
                     identity={this.props.identity}
                     chatMsgs={chatMsgs}
+                    likeTuples={likeTuples}
+                    theSecret={sharedChatKey}
+                    yourLikes={yourLikes}
                     selectedPayGroupNameDocs={
                       this.props.selectedPayGroupNameDocs
+                    }
+                    showAddLikeToChatDocModal={
+                      this.props.showAddLikeToChatDocModal
                     }
                   />
 
