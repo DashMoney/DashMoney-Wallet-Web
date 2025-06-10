@@ -24,7 +24,8 @@ export default function ECDHxDecrypt(
   theECDHxDocArray, //ordered from thePackage array
   yourECDHxDoc,
   //theTimeIndex,
-  theMnemonic
+  theMnemonic,
+  theInitialMbrDoc
   //whichNetwork
 ) {
   //create wallet from new Mnemonic
@@ -39,7 +40,7 @@ export default function ECDHxDecrypt(
   );
 
   // Start Loop Here:
-
+  let docKeytoPass;
   let isError = false;
 
   //For Each thePackage(Tuple) - get ECDHdoc , combine with myPrivKey
@@ -71,7 +72,15 @@ export default function ECDHxDecrypt(
 
       console.log("originalText: ", originalText);
 
-      if (originalText.slice(0, 4) !== "xpub") {
+      // JSON.stringify({
+      //   xPubKey: xPublicKey,
+      //   docKey: allDocsKey,
+      // });
+      if (theInitialMbrDoc.$ownerId === mbrECDHDoc.$ownerId) {
+        docKeytoPass = JSON.parse(originalText).docKey;
+
+        return [tuple[0], JSON.parse(originalText).xPubKey];
+      } else if (originalText.slice(0, 4) !== "xpub") {
         isError = true;
       }
 
@@ -84,5 +93,5 @@ export default function ECDHxDecrypt(
 
   //console.log("decryptedFromMbrs: ", decryptedFromMbrs);
 
-  return [decryptedFromMbrs, isError];
+  return [decryptedFromMbrs, docKeytoPass, isError];
 }

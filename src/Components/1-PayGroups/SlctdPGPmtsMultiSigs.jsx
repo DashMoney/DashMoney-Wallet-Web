@@ -136,6 +136,7 @@ console.log(difference2); // Output: [5]
                 this.props.showAcceptMultiSigAcctModal
               }
               YourPGsMultiSigUTXOs={this.props.YourPGsMultiSigUTXOs}
+              handleGoToPayGroupAcct={this.props.handleGoToPayGroupAcct}
               //
               selectedPayGroupDoc={this.props.selectedPayGroupDoc}
               selectedPayGroupNameDocs={this.props.selectedPayGroupNameDocs}

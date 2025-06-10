@@ -20,6 +20,9 @@ import SelectedPayGroupForm from "./SelectedPayGroupForm";
 import DocKeyDecrypt from "./Encrypt&Decrypt/DocKeyDecrypt";
 import DecryptChatMsgs from "./Encrypt&Decrypt/DecryptChatMsgs";
 
+import DecryptChatForMbrs from "./Encrypt&Decrypt/DecryptChatForMbrs";
+import DocKeyEncrypt from "./Encrypt&Decrypt/DocKeyEncrypt";
+
 import "../../App.css";
 
 class SelectedPayGroupPage extends React.Component {
@@ -46,13 +49,13 @@ class SelectedPayGroupPage extends React.Component {
     let isInitialMsgDoc = false;
 
     let chatMsgs = [];
-    let sharedChatKey;
+    let sharedChatKey = this.props.selectedPayGroupDoc.allDocKey;
 
     let chatLikesObjs = [];
 
     let yourLikesObjs = [];
 
-    //find a first doc from me
+    //find a doc
     let yourChatDoc = this.props.selectedPayGroupChatDocs.find((x) => {
       return x.$ownerId === this.props.identity;
     });
@@ -60,12 +63,12 @@ class SelectedPayGroupPage extends React.Component {
     if (yourChatDoc === undefined) {
       isInitialMsgDoc = true;
     } else {
-      //Decrypt DocKey ->
-      sharedChatKey = DocKeyDecrypt(
-        yourChatDoc.docKey,
-        yourChatDoc.timeIndex,
-        this.props.mnemonic
-      );
+      //Decrypt DocKey -> UNECESSARY NOW, SEE ABOVE
+      // sharedChatKey = DocKeyDecrypt(
+      //   yourFirstChatDoc.docKey,
+      //   yourChatDoc.timeIndex,
+      //   this.props.mnemonic
+      // );
 
       //console.log(sharedChatKey);
 
@@ -91,6 +94,9 @@ class SelectedPayGroupPage extends React.Component {
         if (doc.msg6 !== "") {
           encryptedMsgs.push([doc.$ownerId, doc.msg6]);
         }
+        if (doc.msg7 !== "") {
+          encryptedMsgs.push([doc.$ownerId, doc.msg7]);
+        }
       });
       //Decrypt Msgs ->
       //msg should be Array of Objects
@@ -103,7 +109,8 @@ class SelectedPayGroupPage extends React.Component {
 
       let chatMsgsTuples;
       if (encryptedMsgs.length !== 0) {
-        chatMsgsTuples = DecryptChatMsgs(encryptedMsgs, sharedChatKey); //.flat();
+        chatMsgsTuples = DecryptChatMsgs(encryptedMsgs, sharedChatKey);
+        // ; //.flat();
       } else {
         chatMsgsTuples = [[], []];
       }
@@ -118,29 +125,29 @@ class SelectedPayGroupPage extends React.Component {
 
       chatMsgs = chatMsgsTuples[0].flat();
 
-      console.log("chatMsgs: ", chatMsgs);
+      //console.log("chatMsgs: ", chatMsgs);
 
       chatLikesObjs = chatMsgsTuples[1].flat();
 
-      console.log("chatLikesObjs: ", chatLikesObjs);
+      //console.log("chatLikesObjs: ", chatLikesObjs);
 
       yourLikesObjs = chatLikesObjs.filter((likeTup) => {
         return likeTup[0] === this.props.identity;
       });
 
       //yourLikesObjs.flat();
-      console.log("yourLikesObjs: ", yourLikesObjs);
+      // console.log("yourLikesObjs: ", yourLikesObjs);
     }
 
     let likeTuples = [...chatLikesObjs];
 
-    console.log("likeTuples: ", likeTuples);
+    //console.log("likeTuples: ", likeTuples);
 
     let yourLikes = yourLikesObjs.map((x) => {
       return x[1];
     });
 
-    console.log("yourLikes: ", yourLikes);
+    //console.log("yourLikes: ", yourLikes);
 
     return (
       <>
@@ -172,9 +179,9 @@ class SelectedPayGroupPage extends React.Component {
             </h3>
             <Button
               variant="primary"
-              onClick={() => this.props.handleSelectedDapp("PayGroupPmts")}
+              onClick={() => this.props.handleSelectedDapp("PayGroupPmts")} //sharedChatKey
             >
-              <b>Payments</b>
+              <b>MultiSigs</b>
             </Button>
           </Container>
         </Navbar>
@@ -211,7 +218,7 @@ class SelectedPayGroupPage extends React.Component {
                     <Button
                       variant="success"
                       size="lg"
-                      onClick={() => this.props.decideStartOrNotPayGroupsMsgs()}
+                      onClick={() => this.props.createStartPayGroupsMsgs()}
                     >
                       <b>Enter Group Chat</b>
                     </Button>

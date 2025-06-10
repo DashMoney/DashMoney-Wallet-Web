@@ -26,9 +26,9 @@ class PaymentAddrComponent extends React.Component {
     let buttonColor;
 
     if (this.props.mode === "primary") {
-      buttonColor = "outline-dark";
+      buttonColor = "outline-primary";
     } else {
-      buttonColor = "outline-light";
+      buttonColor = "outline-primary";
     }
 
     return (

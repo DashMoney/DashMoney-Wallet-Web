@@ -37,9 +37,9 @@ class SelectedPayGroupPmts extends React.Component {
 
             <h3 style={{ textAlign: "center" }}>
               {this.props.mode === "primary" ? (
-                <b className="lightMode">Payments</b>
+                <b className="lightMode">Pay Group's MultiSigs</b>
               ) : (
-                <b>Payments</b>
+                <b>Pay Group's MultiSigs</b>
               )}
             </h3>
             <div style={{ marginRight: "4rem" }}></div>
@@ -114,6 +114,7 @@ class SelectedPayGroupPmts extends React.Component {
                 //   this.props.handlePayGroupsOrderFilter
                 // }
                 handleSelectedDapp={this.props.handleSelectedDapp}
+                handleGoToPayGroupAcct={this.props.handleGoToPayGroupAcct}
                 //
                 whichNetwork={this.props.whichNetwork}
                 mode={this.props.mode}

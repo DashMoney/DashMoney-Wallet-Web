@@ -104,7 +104,8 @@ export default function dapiClient(
         //   contractId: "",
         // },
         PayGroupsContract: {
-          contractId: "AyhSpcypjKmTnQCT2oDFWCZF2depMppT89sNLWb4T8Wh",
+          contractId: "GD639Y7EX7wyeV1kqBppcg4itkC2HVziaoypayY87Q4K",
+          //"AyhSpcypjKmTnQCT2oDFWCZF2depMppT89sNLWb4T8Wh",
           //"A5xatnwZ7DCN2mbopVMMTpA4ho7odU2e52adGjXuW8CZ",
         },
         TwoPartyContract: {

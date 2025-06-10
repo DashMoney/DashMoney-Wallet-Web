@@ -89,6 +89,10 @@ import ConfirmCreateMultiSigAcctModal from "./Components/1-PayGroups/Modals/Conf
 
 import ConfirmAcceptMultiSigAcctModal from "./Components/1-PayGroups/Modals/ConfirmAcceptMultiSigAcctModal";
 
+import SlctdPGAcctPage from "./Components/1-PayGroups/SlctdPGAcctPage";
+
+import SlctdPGAcctCreatePmt from "./Components/1-PayGroups/SlctdPGAcctCreatePmt";
+
 // import ProxyPage from "./Components/1-ProxyAccounts/ProxyPage";
 // import HowProxyModal from "./Components/1-ProxyAccounts/HowProxyModal";
 
@@ -225,7 +229,6 @@ class App extends React.Component {
       InitialPullPayGroupMsgs: true,
       isPayGroupsMsgsRefreshReady: true,
 
-      sharedSecret: "",
       messageToAdd: "",
       chatDocToEdit: "",
       chatDocToEditIndex: 0,
@@ -1584,40 +1587,47 @@ class App extends React.Component {
               returnedDoc.scripts = JSON.parse(returnedDoc.scripts);
             }
 
-            //DECRYPT dATA TO tEST -> sat
+            if (returnedDoc.fromMbrs !== "") {
+              // if (returnedDoc.fromMbrs !== "") {
+              //   returnedDoc.fromMbrs = JSON.parse(returnedDoc.fromMbrs);
+              // }
 
-            let DecryptedFromMbrs = DocKeyDecrypt(
-              returnedDoc.fromMbrs,
-              returnedDoc.timeIndex,
-              this.state.mnemonic
-            );
-
-            //console.log("DecryptedFromMbrs: ", DecryptedFromMbrs);
-
-            //SO FromMbrs ONLY SAVE ON FINALIZED EDIT -> CHECK ->
-            // ALSO NEED TO ADD FOR THE FINAL DOC EDIT BC THIS ONLY ADD ON THE PULL ->
-            //
-            let mbrsXPubsToPass = JSON.parse(DecryptedFromMbrs);
-
-            // THEREFORE CAN DECRYPT AND SAVE AS mbrsXPubs after I add my own to the array ->
-
-            // function getYourXPub(theMnemonic,theTimeIndex,whichNetwork)
-
-            mbrsXPubsToPass.push(
-              getYourXPub(
-                this.state.mnemonic,
+              let DecryptedFromMbrs = DocKeyDecrypt(
+                returnedDoc.fromMbrs,
                 returnedDoc.timeIndex,
-                this.state.whichNetwork
-              )
-            );
+                this.state.mnemonic
+              );
 
-            console.log("mbrsXPubsToPass: ", mbrsXPubsToPass);
+              //NEW//
+              //JSON.stringify({xPubs:dataToEncrypt,docKey:AllDocKey}),
+              //NEW//
 
-            returnedDoc.mbrsXPubs = mbrsXPubsToPass;
+              console.log("DecryptedFromMbrs: ", DecryptedFromMbrs);
 
-            // if (returnedDoc.fromMbrs !== "") {
-            //   returnedDoc.fromMbrs = JSON.parse(returnedDoc.fromMbrs);
-            // }
+              DecryptedFromMbrs = JSON.parse(DecryptedFromMbrs);
+
+              //SO FromMbrs ONLY SAVE ON FINALIZED EDIT -> CHECK ->
+              // ALSO NEED TO ADD FOR THE FINAL DOC EDIT BC THIS ONLY ADD ON THE PULL ->
+              //
+              let mbrsXPubsToPass = DecryptedFromMbrs.xPubs;
+
+              // THEREFORE CAN DECRYPT AND SAVE AS mbrsXPubs after I add my own to the array ->
+
+              // function getYourXPub(theMnemonic,theTimeIndex,whichNetwork)
+
+              mbrsXPubsToPass.push(
+                getYourXPub(
+                  this.state.mnemonic,
+                  returnedDoc.timeIndex,
+                  this.state.whichNetwork
+                )
+              );
+
+              console.log("mbrsXPubsToPass: ", mbrsXPubsToPass);
+
+              returnedDoc.mbrsXPubs = mbrsXPubsToPass;
+              returnedDoc.allDocKey = DecryptedFromMbrs.docKey;
+            }
 
             //ALSO NEED TO FOR EACH MBR# ->  ***
             let mbrNum = parseInt(returnedDoc.$type.slice(4, 5));
@@ -2288,14 +2298,44 @@ class App extends React.Component {
 
       //ECDHxEncrypt(thePackage,theECDHxDocArray,yourECDHxDoc,  theTimeIndex,theMnemonic,//whichNetwork)
 
+      //NEW//
+      let allDocsKey = Identifier.from(
+        crypto.Random.getRandomBuffer(32)
+      ).toJSON();
+
+      //NEW//
+      let packageToEncrypt = JSON.stringify({
+        xPubKey: xPublicKey,
+        docKey: allDocsKey,
+      });
+
       let encryptedForMbrs = ECDHxEncrypt(
-        xPublicKey,
+        packageToEncrypt,
         this.state.newPayGroupECDHDocs,
         this.state.YourPayGroupsPubKeyDoc,
         // truncatedTimeStamp,
         this.state.mnemonic
         // this.state.whichNetwork
       );
+
+      //DO A DOCKEY ENCRYPT AND JUST STORE IN EXTRA AND THEN CLEAR WHEN FINALIZE -> SAT
+
+      let EncryptedExtra = DocKeyEncrypt(
+        //JSON.stringify(dataToEncrypt), //OLD//
+        JSON.stringify({ docKey: allDocsKey }),
+        truncatedTimeStamp,
+        this.state.mnemonic
+      );
+
+      //console.log("EncryptedExtra: ", EncryptedExtra);
+
+      // let DecryptedExtra = DocKeyDecrypt(
+      //   EncryptedExtra,
+      //   truncatedTimeStamp,
+      //   this.state.mnemonic
+      // );
+
+      // console.log("DecryptedExtra: ", DecryptedExtra);
 
       // ***   ***   ***   ***   ***
       // ***   ***   ***   ***
@@ -2307,7 +2347,7 @@ class App extends React.Component {
         forMbrs: JSON.stringify(encryptedForMbrs),
         fromMbrs: "",
         scripts: "",
-        extra: "",
+        extra: EncryptedExtra,
       };
 
       //Add property to DocProperties for each mbrIndex ->
@@ -2403,7 +2443,8 @@ class App extends React.Component {
             ],
 
             isLoadingPayGroups: false,
-          }
+          },
+          () => this.loadIdentityCredits()
           //() => this.handleRefresh_PayGroups()
         );
       })
@@ -2763,45 +2804,8 @@ class App extends React.Component {
 
         returnedDoc.scripts = JSON.parse(returnedDoc.scripts);
 
-        //ALSO NEED TO FOR EACH MBR# ->  ***
-        let mbrNum = parseInt(returnedDoc.$type.slice(4, 5));
-
-        if (mbrNum === 1) {
-          returnedDoc.mbrsList = JSON.parse(returnedDoc.mbrsList);
-        } else {
-          for (let i = 2; i <= mbrNum; i++) {
-            returnedDoc[`mbr${i}`] = Identifier.from(
-              returnedDoc[`mbr${i}`],
-              "base64"
-            ).toJSON();
-          }
-        }
-
-        //ADD THE XPUBS HERE AS WELL ->
-        //returnedDoc.fromMbrs = JSON.parse(returnedDoc.fromMbrs);
-        let DecryptedFromMbrs = DocKeyDecrypt(
-          returnedDoc.fromMbrs,
-          returnedDoc.timeIndex,
-          this.state.mnemonic
-        );
-
-        console.log("DecryptedFromMbrs: ", DecryptedFromMbrs);
-
-        let mbrsXPubsToPass = JSON.parse(DecryptedFromMbrs);
-
-        // function getYourXPub(theMnemonic,theTimeIndex,whichNetwork)
-
-        mbrsXPubsToPass.push(
-          getYourXPub(
-            this.state.mnemonic,
-            returnedDoc.timeIndex,
-            this.state.whichNetwork
-          )
-        );
-
-        console.log("mbrsXPubsToPass: ", mbrsXPubsToPass);
-
-        returnedDoc.mbrsXPubs = mbrsXPubsToPass;
+        returnedDoc.mbrsXPubs = this.state.selectedPayGroupDoc.mbrsXPubs;
+        returnedDoc.allDocKey = this.state.selectedPayGroupDoc.allDocKey;
 
         // EDIT AND REPLACE :
 
@@ -2925,13 +2929,13 @@ class App extends React.Component {
 
       document.set("scripts", JSON.stringify(newScripts));
 
-      // await platform.documents.broadcast({ replace: [document] }, identity);
-      // return document;
+      await platform.documents.broadcast({ replace: [document] }, identity);
+      return document;
 
       //############################################################
       //This below disconnects the document editing..***
 
-      return document;
+      //return document;
 
       //This is to disconnect the Document editing***
       //############################################################
@@ -2946,50 +2950,10 @@ class App extends React.Component {
           "base64"
         ).toJSON();
 
-        //returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
-        //Already Parsed ^^
-
         returnedDoc.scripts = JSON.parse(returnedDoc.scripts);
 
-        //ALSO NEED TO FOR EACH MBR# ->  ***
-        let mbrNum = parseInt(returnedDoc.$type.slice(4, 5));
-
-        if (mbrNum === 1) {
-          returnedDoc.mbrsList = JSON.parse(returnedDoc.mbrsList);
-        } else {
-          for (let i = 2; i <= mbrNum; i++) {
-            returnedDoc[`mbr${i}`] = Identifier.from(
-              returnedDoc[`mbr${i}`],
-              "base64"
-            ).toJSON();
-          }
-        }
-
-        //ADD THE XPUBS HERE AS WELL ->
-        //returnedDoc.fromMbrs = JSON.parse(returnedDoc.fromMbrs);
-        let DecryptedFromMbrs = DocKeyDecrypt(
-          returnedDoc.fromMbrs,
-          returnedDoc.timeIndex,
-          this.state.mnemonic
-        );
-
-        console.log("DecryptedFromMbrs: ", DecryptedFromMbrs);
-
-        let mbrsXPubsToPass = JSON.parse(DecryptedFromMbrs);
-
-        // function getYourXPub(theMnemonic,theTimeIndex,whichNetwork)
-
-        mbrsXPubsToPass.push(
-          getYourXPub(
-            this.state.mnemonic,
-            returnedDoc.timeIndex,
-            this.state.whichNetwork
-          )
-        );
-
-        console.log("mbrsXPubsToPass: ", mbrsXPubsToPass);
-
-        returnedDoc.mbrsXPubs = mbrsXPubsToPass;
+        returnedDoc.mbrsXPubs = this.state.selectedPayGroupDoc.mbrsXPubs;
+        returnedDoc.allDocKey = this.state.selectedPayGroupDoc.allDocKey;
 
         // EDIT AND REPLACE :
 
@@ -3092,6 +3056,9 @@ class App extends React.Component {
       )
     );
 
+    let DecryptedFromMbrs;
+    let AllDocKey;
+
     const submitPayGroupDoc = async () => {
       const { platform } = client;
 
@@ -3114,6 +3081,7 @@ class App extends React.Component {
       //GET ENCRYPTED DATA FROM OTHER MBRS DOCS -> ORDER BY TUPLES(OWNERiD&DATA)
 
       let mbrsEncryptedTuples = [];
+      let InitialMbrDoc;
 
       this.state.selectedPayGroupMbrDocs.forEach((mbrDoc) => {
         let mbrNum = parseInt(mbrDoc.$type.slice(4, 5));
@@ -3126,6 +3094,7 @@ class App extends React.Component {
           for (let i = 2; i <= mbrNum; i++) {
             ownerArrayOfMbrIds.push(mbrDoc[`mbr${i}`]);
           }
+          InitialMbrDoc = mbrDoc;
         }
 
         let yourIndex = ownerArrayOfMbrIds.findIndex(
@@ -3134,6 +3103,10 @@ class App extends React.Component {
 
         mbrsEncryptedTuples.push([mbrDoc.$ownerId, mbrDoc.forMbrs[yourIndex]]);
       });
+
+      if (InitialMbrDoc === undefined) {
+        InitialMbrDoc = this.state.selectedPayGroupDoc;
+      }
 
       console.log("mbrsEncryptedTuples: ", mbrsEncryptedTuples);
 
@@ -3151,12 +3124,16 @@ class App extends React.Component {
         this.state.selectedPayGroupECDHDocs, //ordered from thePackage array
         this.state.YourPayGroupsPubKeyDoc,
 
-        this.state.mnemonic
+        this.state.mnemonic,
+        InitialMbrDoc
+
         //whichNetwork
       );
       //cATCH HERE IF AN ERROR IS TRIGGERED -> NOT XPUB DECRYPTED
 
       console.log("decryptedFromMbrs: ", decryptedFromMbrs);
+
+      AllDocKey = decryptedFromMbrs[1];
 
       decryptedFromMbrs = decryptedFromMbrs[0]; //removes isError at [1]
 
@@ -3177,31 +3154,57 @@ class App extends React.Component {
         }
       }
 
+      //need to make this array and object with the array and docKey ->
+
       let dataToEncrypt = mbrsIdOrder.map((id) => {
         let tuple = decryptedFromMbrs.find((tup) => tup[0] === id);
         return tuple[1];
       });
 
+      // JSON.stringify({ //THIS IS THE INITIAL MBR SEND OBJ.
+      //   xPubKey: xPublicKey,
+      //   docKey: allDocsKey,
+      // });
+      //NEW//
+      //ADD DOCKEY FOR INITIATOR MBR ->
+      if (InitialMbrDoc.$ownerId === this.state.identity) {
+        let DecryptedExtra = DocKeyDecrypt(
+          InitialMbrDoc.extra,
+          InitialMbrDoc.timeIndex,
+          this.state.mnemonic
+        );
+
+        AllDocKey = JSON.parse(DecryptedExtra).docKey;
+
+        console.log("DecryptedExtra: ", AllDocKey);
+      }
+
+      //NEW//
+
       let EncryptedFromMbrs = DocKeyEncrypt(
-        JSON.stringify(dataToEncrypt),
+        //JSON.stringify(dataToEncrypt), //OLD//
+        JSON.stringify({ xPubs: dataToEncrypt, docKey: AllDocKey }),
         this.state.selectedPayGroupDoc.timeIndex,
         this.state.mnemonic
       );
 
-      //console.log("EncryptedFromMbrs: ", EncryptedFromMbrs);
+      console.log("EncryptedFromMbrs: ", EncryptedFromMbrs);
 
-      //DECRYPT dATA TO tEST -> sat
+      //DECRYPT dATA TO tEST -> SAT
 
-      // let DecryptedFromMbrs = DocKeyDecrypt(
-      //   EncryptedFromMbrs,
-      //   this.state.selectedPayGroupDoc.timeIndex,
-      //   this.state.mnemonic
-      // );
+      DecryptedFromMbrs = DocKeyDecrypt(
+        EncryptedFromMbrs,
+        this.state.selectedPayGroupDoc.timeIndex,
+        this.state.mnemonic
+      );
 
-      // console.log("DecryptedFromMbrs: ", DecryptedFromMbrs);
+      console.log("DecryptedFromMbrs: ", DecryptedFromMbrs);
 
       //SET FROMMBRS ->
       document.set("fromMbrs", EncryptedFromMbrs);
+      if (InitialMbrDoc.$ownerId === this.state.identity) {
+        document.set("extra", "");
+      }
 
       await platform.documents.broadcast({ replace: [document] }, identity);
       return document;
@@ -3209,7 +3212,7 @@ class App extends React.Component {
       //############################################################
       //This below disconnects the document editing..***
 
-      // return document;
+      //return document;
 
       //This is to disconnect the Document editing***
       //############################################################
@@ -3246,6 +3249,12 @@ class App extends React.Component {
           }
         }
         //console.log("FinalizeMbrDoc:\n", returnedDoc);
+
+        //NEW//
+        returnedDoc.mbrsXPubs = DecryptedFromMbrs.xPubs;
+        // THIS ONE DOESN'T INCLUDE OWN XPUB LIKE ON INITIAL QUERY <-**
+        returnedDoc.allDocKey = AllDocKey;
+        //
 
         let indexToReplace = this.state.YourPayGroups.findIndex(
           (x) => x.$id === returnedDoc.$id
@@ -3414,118 +3423,11 @@ class App extends React.Component {
     });
   };
 
-  decideStartOrNotPayGroupsMsgs = () => {
-    //SearchPriorToCreateInitialMessage -> update
-
+  createStartPayGroupsMsgs = () => {
     this.setState({
       isLoadingPayGroupMsgs: true,
     });
-
-    let theDoc = this.state.selectedPayGroupDoc;
-
-    let ownerArrayOfMbrIds = [];
-
-    let mbrNum = parseInt(theDoc.$type.slice(4, 5));
-
-    if (mbrNum === 1) {
-      ownerArrayOfMbrIds = [...theDoc.mbrsList];
-    } else {
-      for (let i = 2; i <= mbrNum; i++) {
-        ownerArrayOfMbrIds.push(theDoc[`mbr${i}`]);
-      }
-    }
-
-    ownerArrayOfMbrIds.push(this.state.identity);
-
-    const client = new Dash.Client(dapiClientNoWallet(this.state.whichNetwork));
-    const getDocuments = async () => {
-      return client.platform.documents.get("PayGroupsContract.chatDoc", {
-        where: [
-          ["payGroupId", "==", theDoc.payGroupId],
-          ["$ownerId", "in", ownerArrayOfMbrIds],
-        ],
-        orderBy: [["$ownerId", "asc"]],
-      });
-    };
-    getDocuments()
-      .then((d) => {
-        if (d.length === 0) {
-          console.log("There is no Chat Docs");
-          // this.setState({
-          //   isLoadingPayGroupMsgs: false,
-          // });
-          this.createStartPayGroupsMsgs();
-        } else {
-          let docArray = [];
-
-          for (const n of d) {
-            let returnedDoc = n.toJSON();
-            //console.log("Req:\n", returnedDoc);
-            returnedDoc.payGroupId = Identifier.from(
-              returnedDoc.payGroupId,
-              "base64"
-            ).toJSON();
-            if (returnedDoc.forMbrs !== "") {
-              returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
-            }
-
-            //console.log("newReq:\n", returnedDoc);
-            // docArray = [...docArray, returnedDoc];
-            // if (returnedDoc.toId === returnedDoc.forId) {
-            //   docArray = [...docArray, returnedDoc];
-            // }
-            docArray.push(returnedDoc);
-          }
-
-          //search - filter not find..and get the
-          let doYouHaveAChatDoc = false;
-
-          let yourChatDoc = docArray.find((x) => {
-            return x.$ownerId === this.state.identity;
-          });
-
-          if (yourChatDoc === undefined) {
-            //orderfirst to last ->
-            let firstChatDoc;
-
-            // //need to order the MSGS ->
-            if (docArray.length === 1) {
-              firstChatDoc = docArray[0];
-            } else {
-              let orderedChatDocs = docArray.sort(function (a, b) {
-                return a.$createdAt - b.$createdAt; //returns smallest number first
-              });
-              firstChatDoc = orderedChatDocs[0];
-            }
-
-            console.log("firstChatDoc: ", firstChatDoc);
-
-            // if (firstChatDoc.forMbrs === "") {
-            //   firstChatDoc = orderedChatDocs[1]; // This is not sufficient
-            // }
-
-            this.setState(
-              {
-                selectedPayGroupChatDocs: docArray,
-                // isLoadingPayGroupMsgs: false,
-              },
-              () => this.createNotFirstPayGroupsMsgs(firstChatDoc)
-            );
-          } else {
-            this.setState({
-              isLoadingPayGroupMsgs: false,
-            });
-          }
-        }
-      })
-      .catch((e) => {
-        console.error("Something went wrong:\n", e);
-      })
-      .finally(() => client.disconnect());
-  };
-
-  createStartPayGroupsMsgs = () => {
-    //console.log("Called Create Pay Group Mbr Doc");
+    //console.log("Called Create Pay Group ChatDoc");
 
     const client = new Dash.Client(
       dapiClient(
@@ -3548,106 +3450,8 @@ class App extends React.Component {
         identity = await platform.identities.get(this.state.identity);
       } // Your identity ID
 
-      // ***   ***   ***   ***
-      // ***   ***   ***   ***   ***
-
-      //BUILD THE FORMBRS ->
-      //Determine the timeIndex -> DONE
-
-      let theTime = Date.now();
-
-      //console.log("returnedDoc: ", returnedDoc);
-      let timeStamp = theTime - 1744000000000;
-      // console.log("timeStamp: ", timeStamp);
-
-      // this is milliseconds *** -> truncate to fix
-      //   //`m/2147483647` <- LIMIT, will hit in 68 years
-      let truncatedTimeStamp = new String(timeStamp).slice(0, -3);
-
-      // GET MBRs xPUBKEYs
-
-      let mbrNum = parseInt(this.state.selectedPayGroupDoc.$type.slice(4, 5));
-
-      let ownerArrayOfMbrIds = [];
-
-      if (mbrNum === 1) {
-        ownerArrayOfMbrIds = [...this.state.selectedPayGroupDoc.mbrsList];
-      } else {
-        for (let i = 2; i <= mbrNum; i++) {
-          ownerArrayOfMbrIds.push(this.state.selectedPayGroupDoc[`mbr${i}`]);
-        }
-      }
-
-      let pubKeyDocs = ownerArrayOfMbrIds.map((mbrId) => {
-        let pubKeyDoc = this.state.selectedPayGroupECDHDocs.find((pub) => {
-          return pub.$ownerId === mbrId;
-        });
-        return pubKeyDoc;
-      });
-
-      pubKeyDocs = pubKeyDocs.filter((doc) => doc !== undefined);
-
-      //NEED ALERT - IF ONE IS UNDEFINED
-
-      let docKey = Identifier.from(crypto.Random.getRandomBuffer(32)).toJSON();
-
-      //ECDHxEncrypt(thePackage,theECDHxDocArray,yourECDHxDoc,  theTimeIndex,theMnemonic,//whichNetwork)
-
-      let encryptedForMbrs = ECDHxEncrypt(
-        docKey,
-        pubKeyDocs,
-        this.state.YourPayGroupsPubKeyDoc,
-        // truncatedTimeStamp,
-        this.state.mnemonic
-        // this.state.whichNetwork
-      );
-
-      //*** Below - not necessary just to TEST*/
-
-      // let decryptedFromMbrs = ECDHxDecrypt(
-      //   mbrsEncryptedTuples, //this is an array of encrypted data
-      //   this.state.selectedPayGroupECDHDocs, //ordered from thePackage array
-      //   this.state.YourPayGroupsPubKeyDoc,
-
-      //   this.state.mnemonic
-      //   //whichNetwork
-      // );
-      //cATCH HERE IF AN ERROR IS TRIGGERED -> NOT XPUB DECRYPTED
-
-      //console.log("decryptedFromMbrs: ", decryptedFromMbrs);
-
-      //decryptedFromMbrs = decryptedFromMbrs[0]; //removes isError at [1]
-
-      //*** */
-
-      //ENCRYPT DOCKEY ->
-      //DocKeyEncrypt(thePackage,theTimeIndex,theMnemonic)
-
-      let encryptedDocKey = DocKeyEncrypt(
-        docKey,
-        truncatedTimeStamp,
-        this.state.mnemonic
-      );
-
-      //DECRYPT dATA TO tEST ->
-
-      // let DecryptedFromMbrs = DocKeyDecrypt(
-      //   encryptedForMbrs,
-      //   this.state.selectedPayGroupDoc.timeIndex,
-      //   this.state.mnemonic
-      // );
-
-      // console.log("ChatDoc-DecryptedFromMbrs: ", DecryptedFromMbrs);
-
-      // ***   ***   ***   ***   ***
-      // ***   ***   ***   ***
-
       docProperties = {
         payGroupId: this.state.selectedPayGroupDoc.payGroupId,
-        forMbrs: JSON.stringify(encryptedForMbrs),
-
-        timeIndex: parseInt(truncatedTimeStamp),
-        docKey: encryptedDocKey,
 
         msg1: "",
         msg2: "",
@@ -3655,207 +3459,10 @@ class App extends React.Component {
         msg4: "",
         msg5: "",
         msg6: "",
-      };
-
-      console.log("docProperties: ", docProperties);
-
-      // Create the note document
-      const PayGroupDocument = await platform.documents.create(
-        `PayGroupsContract.chatDoc`,
-        identity,
-        docProperties
-      );
-
-      //console.log("Initial Doc: ", PayGroupDocument.toJSON());
-
-      //############################################################
-      //This below disconnects the document sending..***
-
-      //return PayGroupDocument;
-
-      //This is to disconnect the Document Creation***
-
-      //############################################################
-
-      const documentBatch = {
-        create: [PayGroupDocument], // Document(s) to create
-      };
-
-      await platform.documents.broadcast(documentBatch, identity);
-      return PayGroupDocument;
-    };
-
-    submitDocument()
-      .then((d) => {
-        let returnedDoc = d.toJSON();
-
-        returnedDoc.payGroupId = Identifier.from(
-          returnedDoc.payGroupId,
-          "base64"
-        ).toJSON();
-
-        returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
-
-        console.log("chatDocument:\n", returnedDoc);
-
-        this.setState(
-          {
-            selectedPayGroupChatDocs: [
-              returnedDoc,
-              ...this.state.selectedPayGroupChatDocs,
-            ],
-
-            isLoadingPayGroupMsgs: false,
-          }
-          //() => this.handleRefresh_PayGroups()
-        );
-      })
-      .catch((e) => {
-        this.setState({
-          isLoadingPayGroupMsgs: false,
-        });
-
-        console.error("Something went wrong creatingStartPGMsgs:\n", e);
-      })
-      .finally(() => client.disconnect());
-  };
-
-  createNotFirstPayGroupsMsgs = (theFirstChatDoc) => {
-    console.log("Called Create Not First ChatDoc");
-
-    const client = new Dash.Client(
-      dapiClient(
-        this.state.whichNetwork,
-        this.state.mnemonic,
-        this.state.skipSynchronizationBeforeHeight
-      )
-    );
-
-    let docProperties = {};
-
-    const submitDocument = async () => {
-      const { platform } = client;
-      // const identity = await platform.identities.get(this.state.identity); // Your identity ID
-
-      let identity = "";
-      if (this.state.identityRaw !== "") {
-        identity = this.state.identityRaw;
-      } else {
-        identity = await platform.identities.get(this.state.identity);
-      } // Your identity ID
-
-      // ***   ***   ***   ***
-      // ***   ***   ***   ***   ***
-
-      //BUILD THE FORMBRS ->
-      //Determine the timeIndex -> DONE
-
-      let theTime = Date.now();
-
-      //console.log("returnedDoc: ", returnedDoc);
-      let timeStamp = theTime - 1744000000000;
-      // console.log("timeStamp: ", timeStamp);
-
-      // this is milliseconds *** -> truncate to fix
-      //   //`m/2147483647` <- LIMIT, will hit in 68 years
-      let truncatedTimeStamp = new String(timeStamp).slice(0, -3);
-
-      //Decrypt All ECDH - no
-      // I JUST NEED TO DECRYPT CHATDOC!!
-
-      //so there is only one chatDoc that is giving the encrypted data to all the other mbrs. so this is much simpler than the pubkey exchange.
-
-      //theFirstChatDoc
-
-      //GET ENCRYPTED DATA FROM OTHER MBRS DOCS -> ORDER BY TUPLES(OWNERiD&DATA)
-      let chatStarter = this.state.selectedPayGroupMbrDocs.find((mbrDoc) => {
-        return mbrDoc.$ownerId === theFirstChatDoc.$ownerId;
-      });
-
-      let chatStarterECDHDoc = this.state.selectedPayGroupECDHDocs.find(
-        (mbrDoc) => {
-          return mbrDoc.$ownerId === theFirstChatDoc.$ownerId;
-        }
-      );
-
-      let forYouEncryptedPwd;
-
-      if (chatStarter !== undefined) {
-        let mbrNum = parseInt(chatStarter.$type.slice(4, 5));
-
-        let ownerArrayOfMbrIds = [];
-
-        if (mbrNum === 1) {
-          ownerArrayOfMbrIds = [...chatStarter.mbrsList];
-        } else {
-          for (let i = 2; i <= mbrNum; i++) {
-            ownerArrayOfMbrIds.push(chatStarter[`mbr${i}`]);
-          }
-        }
-
-        let yourIndex = ownerArrayOfMbrIds.findIndex(
-          (x) => x === this.state.identity
-        );
-
-        forYouEncryptedPwd = theFirstChatDoc.forMbrs[yourIndex];
-
-        console.log("forYouEncryptedPwd: ", forYouEncryptedPwd);
-      }
-
-      let decryptedFromMbrs = DecryptChatForMbrs(
-        forYouEncryptedPwd,
-        chatStarterECDHDoc,
-        this.state.YourPayGroupsPubKeyDoc,
-        this.state.mnemonic
-        //whichNetwork
-      );
-      //cATCH HERE IF AN ERROR IS TRIGGERED -> NOT XPUB DECRYPTED
-
-      console.log("decryptedFromMbrs: ", decryptedFromMbrs);
-
-      // ***   ***   ***   ***   ***
-      // ***   ***   ***   ***
-
-      //ENCRYPT DOCKEY ->
-      //DocKeyEncrypt(thePackage,theTimeIndex,theMnemonic)
-
-      let encryptedDocKey = DocKeyEncrypt(
-        decryptedFromMbrs, //this is the docKey
-        truncatedTimeStamp,
-        this.state.mnemonic
-      );
-
-      //DECRYPT dATA TO tEST ->
-
-      // let DecryptedFromMbrs = DocKeyDecrypt(
-      //   encryptedForMbrs,
-      //   this.state.selectedPayGroupDoc.timeIndex,
-      //   this.state.mnemonic
-      // );
-
-      // console.log("ChatDoc-DecryptedFromMbrs: ", DecryptedFromMbrs);
-
-      // ***   ***   ***   ***   ***
-      // ***   ***   ***   ***
-
-      docProperties = {
-        payGroupId: this.state.selectedPayGroupDoc.payGroupId,
-        forMbrs: "",
-
-        timeIndex: parseInt(truncatedTimeStamp),
-        docKey: encryptedDocKey,
-
-        msg1: "",
-        msg2: "",
-        msg3: "",
-        msg4: "",
-        msg5: "",
-        msg6: "",
+        msg7: "",
       };
 
       //console.log("docProperties: ", docProperties);
-
-      //DocKey encrypt the fromMbrs with timeIndex -> not yet.
 
       // Create the note document
       const PayGroupDocument = await platform.documents.create(
@@ -3913,15 +3520,10 @@ class App extends React.Component {
           isLoadingPayGroups: false,
         });
 
-        console.error(
-          "Something went wrong create NotFirst Pay GroupMsgs:\n",
-          e
-        );
+        console.error("Something went wrong create Pay Group ChatDoc:\n", e);
       })
       .finally(() => client.disconnect());
   };
-
-  //I can't decrypt Other msgs untill I have a msgs, when at least not till I decrypt the first msg
 
   showAddMessageToChatDocModal = (theMessage, theSharedSecret) => {
     //Need to find the latest ChatDoc -> filter and then sort and let the earliest
@@ -3944,7 +3546,6 @@ class App extends React.Component {
       return chat.$id === yourLatestChatDoc.$id;
     });
     this.setState({
-      sharedSecret: theSharedSecret,
       messageToAdd: theMessage,
       chatDocToEdit: yourLatestChatDoc,
       chatDocToEditIndex: chatDocIndex, //<- Need this for the editingfunction!!
@@ -3959,6 +3560,7 @@ class App extends React.Component {
 
     //msg1
     if (this.state.chatDocToEdit.msg1.length < 2000) {
+      //Need a double check for race condition.
       this.editAddMessageToChatDoc("msg1");
     }
     //msg2
@@ -3980,6 +3582,8 @@ class App extends React.Component {
     //msg6
     else if (this.state.chatDocToEdit.msg6.length < 2000) {
       this.editAddMessageToChatDoc("msg6");
+    } else if (this.state.chatDocToEdit.msg7.length < 2000) {
+      this.editAddMessageToChatDoc("msg7");
     } else {
       //createNewChatDoc() and start at msg1
     }
@@ -3998,8 +3602,6 @@ class App extends React.Component {
         this.state.skipSynchronizationBeforeHeight
       )
     );
-
-    // *** *** ***
 
     let theTime = Date.now();
 
@@ -4021,7 +3623,7 @@ class App extends React.Component {
 
       decryptedMsgObject = DecryptChatDoc4Edit(
         msgArrayToDecrypt,
-        this.state.sharedSecret
+        this.state.selectedPayGroupDoc.allDocKey
       );
 
       decryptedMsgObject = JSON.parse(decryptedMsgObject);
@@ -4041,7 +3643,7 @@ class App extends React.Component {
 
     let encrypted4ChatDoc = EncryptChatDoc4Edit(
       JSON.stringify(decryptedMsgObject),
-      this.state.sharedSecret
+      this.state.selectedPayGroupDoc.allDocKey
     );
 
     console.log("encrypted4ChatDoc: ", encrypted4ChatDoc);
@@ -4064,6 +3666,11 @@ class App extends React.Component {
           where: [["$id", "==", this.state.chatDocToEdit.$id]],
         }
       );
+
+      if (this.state.chatDocToEdit.correctOnEdit !== undefined) {
+        document.set(forMbrs, "");
+        document.set(docKey, this.state.chatDocToEdit.docKey);
+      }
 
       document.set(theMsgNum, encrypted4ChatDoc);
 
@@ -4142,8 +3749,6 @@ class App extends React.Component {
     );
 
     this.setState({
-      sharedSecret: theSharedSecret,
-
       messageObjectLiked: theMessageObjectLiked,
       chatDocToEdit: yourLatestChatDoc,
       chatDocToEditIndex: chatDocIndex, //<- Need this for the editingfunction!!
@@ -4179,6 +3784,10 @@ class App extends React.Component {
     //msg6
     else if (this.state.chatDocToEdit.msg6.length < 2000) {
       this.editAddLikeToChatDoc("msg6");
+    }
+    //msg7
+    else if (this.state.chatDocToEdit.msg7.length < 2000) {
+      this.editAddLikeToChatDoc("msg7");
     } else {
       //createNewChatDoc() and start at msg1
     }
@@ -4212,7 +3821,7 @@ class App extends React.Component {
 
       decryptedMsgLikeObject = DecryptChatDoc4Edit(
         msgLikeArraysToDecrypt,
-        this.state.sharedSecret
+        this.state.selectedPayGroupDoc.allDocKey
       );
 
       decryptedMsgLikeObject = JSON.parse(decryptedMsgLikeObject);
@@ -4232,7 +3841,7 @@ class App extends React.Component {
 
     let encrypted4ChatDoc = EncryptChatDoc4Edit(
       JSON.stringify(decryptedMsgLikeObject),
-      this.state.sharedSecret
+      this.state.selectedPayGroupDoc.allDocKey
     );
 
     console.log("encrypted4ChatDoc: ", encrypted4ChatDoc);
@@ -4306,19 +3915,341 @@ class App extends React.Component {
 
   //Pay Group Pmts
 
-  handlePayGroupPmtsBackArrow = () => {
+  handleGoToPayGroupAcct = (theScriptsIndex, theBalance) => {
     this.setState(
       {
-        selectedDapp: "PayGroup",
-        isLoadingPayGroupMsgs: true,
-        InitialPullPayGroupMsgs: true,
-        selectedPayGroupChatDocs: [],
-      },
-      () => this.pullInitialTriggerPAYGROUPMSGS()
+        selectedDapp: "PayGroupAcct",
+        selectedMultisigBalance: 0,
+        selectedPayGroupAcctIndex: theScriptsIndex,
+        isLoadingPayGroupAcct: true,
+      }
+      //,this.getPayGroupAcctPayInit()
     );
   };
 
+  //MAY NOT WANT TO DO AN INITALTRIGGER, MAYBE GO TO AN PAYDOCS OBJECT AND SEE IF I HAVE QUERIED ALREADY ->
+  //ONLY FULL PAYGROUPS REFRESH CLEARS OR JUST DO EVERYTIME?
+
+  //this.props.pullInitialTriggerAcctPAYGROUPS();
+
+  // pullInitialTriggerAcctPAYGROUPS = () => {
+  //   if (this.state.InitialPullPayGroupAcct) {
+  //     //
+  //     this.getPayGroupAcctPayInit();
+  //     this.setState({
+  //       InitialPullPayGroupAcct: false,
+  //     });
+  //   }
+  // };
+  // ADD THE InitialPullPayGroupAcct: true, TO STATE ->
+
+  // handlePayGroupAcctBackArrow = () => {
+  //   this.setState({
+  //     selectedDapp: "PayGroupPmts",
+  //     //isLoadingPayGroupAcct: true,
+  //   });
+  // };
+
+  // ADD THE isLoadingPayGroupAcct: true, TO STATE ->
+
+  getPayGroupAcctPayInit = () => {
+    //console.log("Calling getPayGroupMsgs");
+
+    let theDoc = this.state.selectedPayGroupDoc;
+
+    const client = new Dash.Client(dapiClientNoWallet(this.state.whichNetwork));
+
+    let ownerArrayOfMbrIds = [];
+
+    let mbrNum = parseInt(theDoc.$type.slice(4, 5));
+
+    if (mbrNum === 1) {
+      ownerArrayOfMbrIds = [...theDoc.mbrsList];
+    } else {
+      for (let i = 2; i <= mbrNum; i++) {
+        ownerArrayOfMbrIds.push(theDoc[`mbr${i}`]);
+      }
+    }
+
+    ownerArrayOfMbrIds.push(this.state.identity);
+
+    const getDocuments = async () => {
+      return client.platform.documents.get("PayGroupsContract.payInit", {
+        // limit: 100,
+        where: [
+          ["payGroupId", "==", theDoc.payGroupId],
+          ["$ownerId", "in", ownerArrayOfMbrIds],
+          ["$createdAt", "<=", Date.now()],
+        ],
+        orderBy: [["$createdAt", "desc"]],
+      });
+    };
+
+    getDocuments()
+      .then((d) => {
+        if (d.length === 0) {
+          console.log("There are no ChatDocs for Pay Group");
+          //Create a Chat doc and encrypt docKey for others ->
+          //this.createStartPayGroupsMsgs();
+          //NO ^^^ just enable with button, no auto.
+
+          this.setState({
+            isLoadingPayGroupAcct: false,
+          });
+        } else {
+          //if there are doc(s) but none are mine -> create docKey from the first DocKey ->
+
+          // if there are doc(s) and one is mine -> order and
+          // check if forMbrs is '' if not then check if first, if not
+          let docArray = [];
+
+          for (const n of d) {
+            let returnedDoc = n.toJSON();
+            //console.log("ChatDoc:\n", returnedDoc);
+            returnedDoc.payGroupId = Identifier.from(
+              returnedDoc.payGroupId,
+              "base64"
+            ).toJSON();
+
+            // // returnedDoc.msgObject = JSON.parse(returnedDoc.msgObject);
+            //console.log("chatDoc:\n", returnedDoc);
+
+            docArray.push(returnedDoc);
+          }
+
+          this.getEachMbrPayDocs(docArray, ownerArrayOfMbrIds);
+          // this.setState({
+          //   selectedPayGroupPayInits: docArray,
+          //   isLoadingPayGroupAcct: false,
+          // });
+        }
+      })
+      .catch((e) => console.error("Something went wrong:\n", e))
+      .finally(() => client.disconnect());
+  };
+
+  getEachMbrPayDocs = (thePayInitDocs, theOwnerArrayOfMbrIds) => {
+    // Do A for each ownerarrayof mbr ids ->
+    //
+  };
+  //try??
+  getPayGroupAcctPayDocs = (thePayInitDocs, theOwnerId) => {
+    //console.log("Calling getPayGroupMsgs");
+
+    const getDocuments = async () => {
+      return client.platform.documents.get("PayGroupsContract.payDoc", {
+        // limit: 100,
+        where: [
+          //if did payInit need "in" OR ELSE query EACH INDIVIDUALLY.. SO will JUST Do EACH MBR For ALL the PAY INITss ->
+          ["payInitId", "==", theDoc.payGroupId],
+          ["$ownerId", "in", theOwnerArrayOfMbrIds],
+        ],
+        orderBy: [["$ownerId", "asc"]],
+      });
+    };
+
+    getDocuments()
+      .then((d) => {
+        if (d.length === 0) {
+          //console.log("There are no ChatDocs for Pay Group");
+          //Create a Chat doc and encrypt docKey for others ->
+          //this.createStartPayGroupsMsgs();
+          //NO ^^^ just enable with button, no auto.
+
+          this.setState({
+            isLoadingPayGroupAcct: false,
+          });
+        } else {
+          //if there are doc(s) but none are mine -> create docKey from the first DocKey ->
+
+          // if there are doc(s) and one is mine -> order and
+          // check if forMbrs is '' if not then check if first, if not
+          let docArray = [];
+
+          for (const n of d) {
+            let returnedDoc = n.toJSON();
+            //console.log("ChatDoc:\n", returnedDoc);
+            returnedDoc.payGroupId = Identifier.from(
+              returnedDoc.payGroupId,
+              "base64"
+            ).toJSON();
+
+            returnedDoc.payInitId = Identifier.from(
+              returnedDoc.payInitId,
+              "base64"
+            ).toJSON();
+            // // returnedDoc.msgObject = JSON.parse(returnedDoc.msgObject);
+            //console.log("chatDoc:\n", returnedDoc);
+
+            docArray.push(returnedDoc);
+          }
+          //DocKeyDecrypt
+
+          this.setState(
+            {
+              selectedPayGroupChatDocs: docArray,
+              isLoadingPayGroupMsgs: false,
+            },
+            () => this.scrollToBottom()
+          );
+        }
+      })
+      .catch((e) => console.error("Something went wrong:\n", e))
+      .finally(() => client.disconnect());
+  };
+
+  // showConfirmCreatePayGroupModal = (theNameDocs, theECDHDocs) => {
+  //   this.setState({
+
+  //     newPayGroupNameDocs: theNameDocs,
+  //     newPayGroupECDHDocs: theECDHDocs,
+
+  //     presentModal: "ConfirmCreatePayGroupModal",
+  //     isModalShowing: true,
+  //   });
+  // };
+
+  //Change to PayInit ->
+  showConfirmCreatePayInitModal = (theUTXOsToUse, theAddr, thePayouts) => {
+    this.setState({
+      //STOP PUSHING OFF THE BUILD/VERIFY AND JUST DO THAT ON THE CREATE PAGE SO PASS THE UTXOS TO USE AND SIMPIFY THE COMPLETING OF THE
+
+      // selectedMultiSigBalance: theBalance, //HAVE TO CHOOSE UTXOS SO WILL CALC BALANCE ANYWAY.
+
+      //Can have PayInits verify if the UTXOs have already been spent
+
+      selectedMultiSigUTXOsToUse: theUTXOsToUse,
+      selectedMultiSigAddr: theAddr,
+      selectedMultiSigPayouts: thePayouts,
+
+      presentModal: "ConfirmCreatePayInitModal",
+      isModalShowing: true,
+    });
+  };
+
   //payInit Doc create
+
+  createPayGroupAcctPayInit = () => {
+    //console.log("Called Create Pay Group PayInit Doc");
+
+    const client = new Dash.Client(
+      dapiClient(
+        this.state.whichNetwork,
+        this.state.mnemonic,
+        this.state.skipSynchronizationBeforeHeight
+      )
+    );
+
+    let docProperties = {};
+
+    const submitDocument = async () => {
+      const { platform } = client;
+      // const identity = await platform.identities.get(this.state.identity); // Your identity ID
+
+      let identity = "";
+      if (this.state.identityRaw !== "") {
+        identity = this.state.identityRaw;
+      } else {
+        identity = await platform.identities.get(this.state.identity);
+      } // Your identity ID
+
+      //
+      //ENCRYPT TXDATA ->
+      //utxos(amt1) -> payouts(amt2),
+
+      //CHANGE IS ALWAYS TO MULTISIG ADDR AND FEE IS 10^5***
+      // OR 5*10^4 -> NO, DO 10^5 LARGE MARGIN AND PLATFORM COSTS ARE MORE..
+
+      //  ***  ***  ***  ***
+
+      //let txData = {type: payment //crowdShare
+      // yla8afo4jfojwelf4:{utxos:??,to:[[addr,amts],[...]],signature}
+      //txId:""}
+
+      //extra => save all others for no rely on others.
+
+      //  ***  ***  ***  ***
+
+      //extra => put copy of all the signatures to submit alone <- **
+
+      //DocKeyEncrypt(thePackage,theTimeIndex,theMnemonic)
+
+      //CAN I USE THE DOCKEYENCRYPT? -> CHECK ->
+
+      let encryptedTxData = DocKeyEncrypt(
+        txData,
+        truncatedTimeStamp,
+        this.state.mnemonic
+      );
+
+      docProperties = {
+        payGroupId: this.state.selectedPayGroupDoc.payGroupId,
+
+        txData: "",
+        extra: "",
+      };
+
+      console.log("docProperties: ", docProperties);
+
+      // Create the note document
+      const PayGroupDocument = await platform.documents.create(
+        `PayGroupsContract.payInit`,
+        identity,
+        docProperties
+      );
+
+      //console.log("Initial Doc: ", PayGroupDocument.toJSON());
+
+      //############################################################
+      //This below disconnects the document sending..***
+
+      return PayGroupDocument;
+
+      //This is to disconnect the Document Creation***
+
+      //############################################################
+
+      // const documentBatch = {
+      //   create: [PayGroupDocument], // Document(s) to create
+      // };
+
+      // await platform.documents.broadcast(documentBatch, identity);
+      // return PayGroupDocument;
+    };
+
+    submitDocument()
+      .then((d) => {
+        let returnedDoc = d.toJSON();
+
+        returnedDoc.payGroupId = Identifier.from(
+          returnedDoc.payGroupId,
+          "base64"
+        ).toJSON();
+
+        console.log("chatDocument:\n", returnedDoc);
+
+        this.setState(
+          {
+            selectedPayGroupChatDocs: [
+              returnedDoc,
+              ...this.state.selectedPayGroupChatDocs,
+            ],
+
+            isLoadingPayGroupMsgs: false,
+          },
+          () => this.loadIdentityCredits()
+          //() => this.handleRefresh_PayGroups()
+        );
+      })
+      .catch((e) => {
+        this.setState({
+          isLoadingPayGroupMsgs: false,
+        });
+
+        console.error("Something went wrong creatingStartPGMsgs:\n", e);
+      })
+      .finally(() => client.disconnect());
+  };
 
   //payDoc create - Response create
 
@@ -7991,9 +7922,7 @@ class App extends React.Component {
                   this.state.isPayGroupsMsgsRefreshReady
                 }
                 //
-                decideStartOrNotPayGroupsMsgs={
-                  this.decideStartOrNotPayGroupsMsgs
-                }
+                createStartPayGroupsMsgs={this.createStartPayGroupsMsgs}
                 //
                 selectedPayGroupDoc={this.state.selectedPayGroupDoc}
                 selectedPayGroupNameDocs={this.state.selectedPayGroupNameDocs}
@@ -8023,6 +7952,7 @@ class App extends React.Component {
                 handleSelectedDapp={this.handleSelectedDapp}
                 //handlePayGroupPmtsBackArrow={this.handlePayGroupPmtsBackArrow}
                 YourPGsMultiSigUTXOs={this.state.YourPGsMultiSigUTXOs}
+                handleGoToPayGroupAcct={this.handleGoToPayGroupAcct}
                 //
                 // pullInitialTriggerPAYGROUPMSGS={
                 //   this.pullInitialTriggerPAYGROUPMSGS
@@ -8131,6 +8061,81 @@ class App extends React.Component {
           ) : (
             <></>
           )}
+
+          {this.state.selectedDapp === "PayGroupAcct" ? (
+            <>
+              <SlctdPGAcctPage
+                isLoadingPayGroups={this.state.isLoadingPayGroups}
+                isLoadingPayGroupAcct={this.state.isLoadingPayGroupAcct}
+                selectedPayGroupAcctIndex={this.state.selectedPayGroupAcctIndex}
+                mnemonic={this.state.mnemonic}
+                identity={this.state.identity}
+                identityInfo={this.state.identityInfo}
+                uniqueName={this.state.uniqueName}
+                mode={this.state.mode}
+                whichNetwork={this.state.whichNetwork}
+                showModal={this.showModal}
+                // showAddMessageToChatDocModal={this.showAddMessageToChatDocModal}
+                // handlePayGroupAcctBackArrow={this.handlePayGroupAcctBackArrow}
+                handleSelectedDapp={this.handleSelectedDapp}
+                YourPGsMultiSigUTXOs={this.state.YourPGsMultiSigUTXOs}
+                //
+                // pullInitialTriggerAcctPAYGROUP={
+                //   this.pullInitialTriggerAcctPAYGROUP
+                // }
+                // isPayGroupsMsgsRefreshReady={
+                //   this.state.isPayGroupsMsgsRefreshReady
+                // }
+                //
+                // showAcceptMultiSigAcctModal={this.showAcceptMultiSigAcctModal}
+                //
+                selectedPayGroupDoc={this.state.selectedPayGroupDoc}
+                selectedPayGroupNameDocs={this.state.selectedPayGroupNameDocs}
+                selectedPayGroupMbrDocs={this.state.selectedPayGroupMbrDocs}
+                selectedPayGroupECDHDocs={this.state.selectedPayGroupECDHDocs}
+                //selectedPayGroupChatDocs={this.state.selectedPayGroupChatDocs}
+                //
+              />
+            </>
+          ) : (
+            <></>
+          )}
+
+          {this.state.selectedDapp === "PayGroupAcctCreatePmt" ? (
+            <>
+              <SlctdPGAcctCreatePmt
+                isLoadingPayGroupAcct={this.state.isLoadingPayGroupAcct}
+                selectedPayGroupAcctIndex={this.state.selectedPayGroupAcctIndex}
+                mnemonic={this.state.mnemonic}
+                identity={this.state.identity}
+                identityInfo={this.state.identityInfo}
+                uniqueName={this.state.uniqueName}
+                mode={this.state.mode}
+                whichNetwork={this.state.whichNetwork}
+                showModal={this.showModal}
+                // showAddMessageToChatDocModal={this.showAddMessageToChatDocModal}
+                // handlePayGroupAcctBackArrow={this.handlePayGroupAcctBackArrow}
+                handleSelectedDapp={this.handleSelectedDapp}
+                YourPGsMultiSigUTXOs={this.state.YourPGsMultiSigUTXOs}
+                selectedPayGroupDoc={this.state.selectedPayGroupDoc}
+                selectedPayGroupNameDocs={this.state.selectedPayGroupNameDocs}
+                selectedPayGroupMbrDocs={this.state.selectedPayGroupMbrDocs}
+                selectedPayGroupECDHDocs={this.state.selectedPayGroupECDHDocs}
+
+                //
+              />
+            </>
+          ) : (
+            <></>
+          )}
+
+          {/*     ################            A
+           *      ###          ####          AAA
+           *      ################          AAAAA
+           *      ###                      AAAAAAA
+           *      ###                         A
+           *                                  A
+           *  */}
 
           {this.state.selectedDapp === "2-Party Pay" ? (
             <>
@@ -8386,6 +8391,25 @@ class App extends React.Component {
         ) : (
           <></>
         )} */}
+
+        {this.state.isModalShowing &&
+        this.state.presentModal === "ConfirmCreatePayInitModal" ? (
+          <ConfirmCreatePayInitModal
+            whichNetwork={this.state.whichNetwork}
+            uniqueName={this.state.uniqueName}
+            // multiSigNumOfMbrs={this.state.multiSigNumOfMbrs}
+            // multiSigLabel={this.state.multiSigLabel}
+            // editPayGroupMbrDoc4MultiSigAcct={
+            //   this.editPayGroupMbrDoc4MultiSigAcct
+            // }
+            isModalShowing={this.state.isModalShowing}
+            hideModal={this.hideModal}
+            mode={this.state.mode}
+            closeTopNav={this.closeTopNav}
+          />
+        ) : (
+          <></>
+        )}
 
         {this.state.isModalShowing &&
         this.state.presentModal === "ConfirmCreateMultiSigAcctModal" ? (

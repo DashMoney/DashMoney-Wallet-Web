@@ -378,15 +378,9 @@ class SlctdPGPmtsMultisig extends React.Component {
                 <Button
                   variant="primary"
                   size="lg"
-                  // onClick={
-                  //   () =>
-                  //     this.props.decideFinalizeOrGoToPage(
-                  //       this.props.selectedPayGroupDoc,
-                  //       mbrNameDocs,
-                  //       mbrDocs,
-                  //       pubKeyDocs
-                  //     )
-                  // }
+                  onClick={() =>
+                    this.props.handleGoToPayGroupAcct(this.props.scriptKey)
+                  }
                 >
                   <b>Payments</b>
                 </Button>
