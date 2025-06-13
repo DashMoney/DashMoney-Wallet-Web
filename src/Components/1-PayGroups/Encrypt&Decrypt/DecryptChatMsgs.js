@@ -38,7 +38,7 @@ export default function DecryptChatMsgs(
 
     let decryptedParsedData = JSON.parse(decryptedData.toString(enc.Utf8));
 
-    console.log("decryptedData: ", decryptedData.toString(enc.Utf8));
+    //console.log("decryptedData: ", decryptedData.toString(enc.Utf8));
 
     //!!! BELOW
     //Previous
@@ -85,7 +85,7 @@ export default function DecryptChatMsgs(
     // decryptedLikes.push(decryptedParsedLikes);
   });
 
-  console.log("decryptedData: ", [decryptedMsgs, decryptedLikes]);
+  //console.log("decryptedData: ", [decryptedMsgs, decryptedLikes]);
 
   return [decryptedMsgs, decryptedLikes];
 }

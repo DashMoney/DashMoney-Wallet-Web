@@ -28,6 +28,7 @@ import "../../App.css";
 class SelectedPayGroupPage extends React.Component {
   componentDidMount() {
     this.props.pullInitialTriggerPAYGROUPMSGS();
+    //console.log("MSGS CALLED");
   }
 
   // //https://stackoverflow.com/questions/37620694/how-to-scroll-to-bottom-in-react
@@ -263,10 +264,13 @@ class SelectedPayGroupPage extends React.Component {
             </Col>
           </Row>
           <p></p>
-          <div className="tenfooter">
-            {/* {messages}
-             */}
-          </div>
+          {chatMsgs.length > 4 ? (
+            <>
+              <div className="tenfooter"></div>
+            </>
+          ) : (
+            <></>
+          )}
 
           {/* <p></p>
            https://stackoverflow.com/questions/37620694/how-to-scroll-to-bottom-in-react 

@@ -41,7 +41,7 @@ class SlctdPGPmtsMultisig extends React.Component {
     let utxoArray = this.props.YourPGsMultiSigUTXOs.filter((utxo) => {
       return utxo.address === theMultiSigAddr;
     });
-    console.log("utxoArray: ", utxoArray);
+    //console.log("utxoArray: ", utxoArray);
     let acctBalance = 0;
 
     utxoArray.forEach((utxo) => (acctBalance += utxo.satoshis));
@@ -150,7 +150,7 @@ class SlctdPGPmtsMultisig extends React.Component {
       this.props.whichNetwork
     );
 
-    console.log("builtScriptAddr: ", builtScriptAddr);
+    //console.log("builtScriptAddr: ", builtScriptAddr);
 
     //check builtScript -> Testnet starts with 8 and mainnet starts with 7
     //AND  7VfJ75ukygTUVi7mqob6LwrecBBxv45LK8 length === 34
@@ -376,13 +376,13 @@ class SlctdPGPmtsMultisig extends React.Component {
               {/* <p>This will be the address to copy and the amount from UTXOs</p> */}
               <div className="d-grid gap-2" style={{ margin: "1rem" }}>
                 <Button
-                  variant="primary"
+                  variant="success"
                   size="lg"
                   onClick={() =>
                     this.props.handleGoToPayGroupAcct(this.props.scriptKey)
                   }
                 >
-                  <b>Payments</b>
+                  <b>Payments/CrowdFund</b>
                 </Button>
               </div>
             </>

@@ -7,7 +7,7 @@ import Alert from "react-bootstrap/Alert";
 
 import handleDenomDisplay from "../../UnitDisplay";
 
-class ConfirmCreatePayInitModal extends React.Component {
+class ConfirmBroadcastPmtModal extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -179,4 +179,4 @@ class ConfirmCreatePayInitModal extends React.Component {
   }
 }
 
-export default ConfirmCreatePayInitModal;
+export default ConfirmBroadcastPmtModal;

@@ -21,15 +21,19 @@ import SlctdPGAcctPmts from "./SlctdPGAcctPmts";
 import "../../App.css";
 
 class SlctdPGAcctPage extends React.Component {
-  // constructor(props) {  //MOVED TO APP STATE
+  // constructor(props) {
   //   super(props);
   //   this.state = {
   //
   //   };
   // }
 
-  calcMultiSigBalance = (theMultiSigAddr) => {
-    // [{
+  // componentDidMount() {
+  //   this.props.pullInitialTriggerAcctPAYGROUPS(payGroupId);
+  // }
+
+  render() {
+    // [{ //EXAMPLE
     //   address: 'yjXnjGLBnjgsBgyu33si6PzDuGM7dVBCzr',
     //   txid: 'd098d8fbd5cdcb12f513b18cace9eb0aea8f71fefc82ff871e7651234a927551',
     //   outputIndex: 0,
@@ -37,22 +41,21 @@ class SlctdPGAcctPage extends React.Component {
     //   satoshis: 5000000,
     //   height: 1257338
     // },...]
+
+    let scriptsAddr =
+      this.props.selectedPayGroupDoc.scripts.pub[
+        this.props.selectedPayGroupAcctIndex
+      ][0];
+
     let utxoArray = this.props.YourPGsMultiSigUTXOs.filter((utxo) => {
-      return utxo.address === theMultiSigAddr;
+      return utxo.address === scriptsAddr;
     });
     console.log("utxoArray: ", utxoArray);
+
     let acctBalance = 0;
 
     utxoArray.forEach((utxo) => (acctBalance += utxo.satoshis));
 
-    return acctBalance;
-  };
-
-  // componentDidMount() {
-  //   this.props.pullInitialTriggerAcctPAYGROUPS(payGroupId);
-  // }
-
-  render() {
     return (
       <>
         <Navbar bg={this.props.mode} variant={this.props.mode} fixed="top">
@@ -83,11 +86,38 @@ class SlctdPGAcctPage extends React.Component {
                 </b>
               )}
             </h3>
-            <span className="textsmaller">
+            {this.props.isPayGroupAcctsRefreshReady ? (
+              <Button
+                variant="primary"
+                onClick={() => {
+                  this.props.handleRefresh_PayGroupAccts();
+                }}
+                style={{
+                  fontSize: "larger",
+                  paddingLeft: "1rem",
+                  paddingRight: "1rem",
+                }}
+              >
+                <b>Refresh</b>
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                disabled
+                style={{
+                  fontSize: "larger",
+                  paddingLeft: "1rem",
+                  paddingRight: "1rem",
+                }}
+              >
+                <b>Refresh</b>
+              </Button>
+            )}
+            {/* <span className="textsmaller">
               Requires:{" "}
               {this.props.selectedPayGroupAcctIndex.toString().slice(0, 1)}{" "}
               Signers
-            </span>
+            </span> */}
             {/* <div style={{ marginRight: "4rem" }}></div> */}
           </Container>
         </Navbar>
@@ -102,29 +132,11 @@ class SlctdPGAcctPage extends React.Component {
                 />
               </div>
 
-              {/* {!this.props.isLoadingPayGroupAcct ? ( */}
-              <>
-                <div className="d-grid gap-2" style={{ margin: "1rem" }}>
-                  <Button
-                    variant="success"
-                    size="lg"
-                    onClick={() =>
-                      this.props.handleSelectedDapp("PayGroupAcctCreatePmt")
-                    }
-                  >
-                    <b>Start Payment</b>
-                  </Button>
-                </div>
-              </>
-              {/* ) : (
-                <></>
-              )} */}
-
               <div
                 style={{
                   textAlign: "center",
-                  marginTop: "1.5rem",
-                  marginBottom: "0rem",
+                  marginTop: ".5rem",
+                  marginBottom: "1rem",
                 }}
               >
                 <h2>
@@ -137,30 +149,50 @@ class SlctdPGAcctPage extends React.Component {
                         ][1]
                       }
                       :{" "}
-                      {handleDenomDisplay(
-                        this.props.whichNetwork,
-                        this.calcMultiSigBalance(
-                          this.props.selectedPayGroupDoc.scripts.pub[
-                            this.props.selectedPayGroupAcctIndex
-                          ][0]
-                        )
-                      )}
+                      {handleDenomDisplay(this.props.whichNetwork, acctBalance)}
                     </b>{" "}
                     {/* in <b>MultiSig</b> */}
                   </Badge>
                 </h2>
               </div>
 
-              {/* <div
-                //className="cardTitle"
-                style={{ textAlign: "center", marginTop: "2rem" }}
-              >
-                <h2>
-                  <b>Coming Soon!</b>
-                </h2>
-              </div> */}
+              {!this.props.isLoadingPayGroupAcct && acctBalance > 0 ? (
+                <>
+                  <div className="d-grid gap-2" style={{ margin: "1rem" }}>
+                    <Button
+                      variant="success"
+                      size="lg"
+                      onClick={() =>
+                        this.props.handleSelectedDapp("PayGroupAcctCreatePmt")
+                      }
+                    >
+                      <b>Start Payment</b>
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <></>
+              )}
 
-              {this.props.isLoadingPayGroups ? (
+              {!this.props.isLoadingPayGroupAcct ? (
+                <>
+                  <div className="d-grid gap-2" style={{ margin: "1rem" }}>
+                    <Button
+                      variant="success"
+                      size="lg"
+                      onClick={() =>
+                        this.props.handleSelectedDapp("ComingSoonPage")
+                      }
+                    >
+                      <b>Start CrowdFund</b>
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <></>
+              )}
+
+              {this.props.isLoadingPayGroupAcct ? (
                 <>
                   <p></p>
                   <div id="spinner">
@@ -176,7 +208,7 @@ class SlctdPGAcctPage extends React.Component {
             </Col>
           </Row>
 
-          {this.props.isLoadingPayGroupsAcct ? (
+          {this.props.isLoadingPayGroupAcct ? (
             <></>
           ) : (
             <>
@@ -197,15 +229,18 @@ class SlctdPGAcctPage extends React.Component {
                 //
                 YourPGsMultiSigUTXOs={this.props.YourPGsMultiSigUTXOs}
                 //
-                showAcceptMultiSigAcctModal={
-                  this.props.showAcceptMultiSigAcctModal
-                }
+                showConfirmAcceptPmtModal={this.props.showConfirmAcceptPmtModal}
+                selectedPayGroupAcctIndex={this.props.selectedPayGroupAcctIndex}
                 //
                 selectedPayGroupDoc={this.props.selectedPayGroupDoc}
                 selectedPayGroupNameDocs={this.props.selectedPayGroupNameDocs}
                 selectedPayGroupMbrDocs={this.props.selectedPayGroupMbrDocs}
                 selectedPayGroupECDHDocs={this.props.selectedPayGroupECDHDocs}
                 //selectedPayGroupChatDocs={this.props.selectedPayGroupChatDocs}
+                selectedPayGroupPayInitDocs={
+                  this.props.selectedPayGroupPayInitDocs
+                }
+                selectedPayGroupPayDocs={this.props.selectedPayGroupPayDocs}
               />
             </>
           )}

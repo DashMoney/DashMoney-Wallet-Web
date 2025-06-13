@@ -31,8 +31,7 @@ class SlctdPGAcctCreatePmt extends React.Component {
     this.setState(
       {
         paymentArray: [...this.state.paymentArray, paymentTuple],
-      },
-      () => console.log(this.state.paymentArray)
+      } //,() => console.log(this.state.paymentArray)
     );
   };
 
@@ -45,9 +44,12 @@ class SlctdPGAcctCreatePmt extends React.Component {
     });
   };
 
-  handleSubmitClick = () => {
-    //Get the UTXOs here ->
-    //this.props.showConfirmCreatePayInitModal(theUTXOsToUse, theAddr, this.state.paymentArray);
+  handleSubmitClick = (utxosToUse, theAddr) => {
+    this.props.showConfirmCreatePayInitModal(
+      utxosToUse,
+      theAddr,
+      this.state.paymentArray
+    );
   };
 
   // componentDidMount() {
@@ -70,20 +72,53 @@ class SlctdPGAcctCreatePmt extends React.Component {
       );
     });
 
-    let exceedsWalletAmt = false;
+    let payoutTotal = 0;
+
+    this.state.paymentArray.forEach((tuple) => {
+      payoutTotal += tuple[1];
+    });
 
     //Pass the buildAddrScript and the UTXOs -> HERE
 
-    //this.props.selectedMultisigBalance ->
+    let scriptsAddr =
+      this.props.selectedPayGroupDoc.scripts.pub[
+        this.props.selectedPayGroupAcctIndex
+      ][0];
+
+    //console.log(scriptsAddr);
+
+    // this.props.isLoadingPayGroupAcct
+    // this.props.selectedPayGroupAcctIndex
+
+    let utxoArray = this.props.YourPGsMultiSigUTXOs.filter((utxo) => {
+      return utxo.address === scriptsAddr;
+    });
+
+    //console.log("utxoArray: ", utxoArray);
 
     //REIMPLEMENT WITH MULTISIG UTXO BALANCE AND WITH FEE COST INCLUDED ->
 
-    // let result =
-    //   this.props.accountBalance - this.state.amountToSend * 100000000;
-    // // console.log(result);
-    // if (result <= 0 && this.state.amountToSend > 0) {
-    //   exceedsWalletAmt = true;
-    // }
+    let acctBalance = 0;
+
+    utxoArray.forEach((utxo) => (acctBalance += utxo.satoshis));
+
+    let exceedsWalletAmt = false;
+
+    if (acctBalance < payoutTotal + 100000) {
+      exceedsWalletAmt = true;
+    }
+
+    let selectedUTXOs = [];
+
+    if (!exceedsWalletAmt) {
+      let localTotal = 0;
+      //find sum of selectedUTXOs, if less than add the next UTXO to the selectedUTXOs ->
+      utxoArray.forEach((tuple) => {
+        if (localTotal < payoutTotal + 100000) {
+          selectedUTXOs.push(tuple);
+        }
+      });
+    }
 
     let uniquePayouts = true;
 
@@ -128,6 +163,28 @@ class SlctdPGAcctCreatePmt extends React.Component {
           />
 
           {/* PUT THE MULTISIG AMT HERE */}
+          <div
+            style={{
+              textAlign: "center",
+              marginTop: ".5rem",
+              marginBottom: "1rem",
+            }}
+          >
+            <h2>
+              <Badge bg="primary">
+                <b //style={{ color: "#008de4" }}
+                >
+                  {
+                    this.props.selectedPayGroupDoc.scripts.pub[
+                      this.props.selectedPayGroupAcctIndex
+                    ][1]
+                  }
+                  : {handleDenomDisplay(this.props.whichNetwork, acctBalance)}
+                </b>{" "}
+                {/* in <b>MultiSig</b> */}
+              </Badge>
+            </h2>
+          </div>
 
           <p></p>
 
@@ -153,6 +210,19 @@ class SlctdPGAcctCreatePmt extends React.Component {
           ) : (
             <></>
           )}
+
+          {/* {exceedsWalletAmt ? (
+            <>
+              <p
+                style={{ color: "red", textAlign: "center" }}
+                className="smallertext"
+              >
+                Payment exceeds amount in MultiSig.
+              </p>
+            </>
+          ) : (
+            <></>
+          )} */}
 
           {/* **** ^^^^ FORMS AND INFO ^^^^ **** */}
 
@@ -226,12 +296,15 @@ class SlctdPGAcctCreatePmt extends React.Component {
           )}
 
           {this.state.paymentArray.length > 0 &&
-          this.state.paymentArray.length <= 7 ? (
+          this.state.paymentArray.length <= 7 &&
+          !exceedsWalletAmt ? (
             <div className="d-grid gap-2" style={{ margin: "1rem" }}>
               <Button
                 variant="primary"
                 size="lg"
-                onClick={() => this.handleSubmitClick()}
+                onClick={() =>
+                  this.handleSubmitClick(selectedUTXOs, scriptsAddr)
+                }
               >
                 <b>Start Payment</b>
               </Button>
@@ -241,7 +314,8 @@ class SlctdPGAcctCreatePmt extends React.Component {
           )}
 
           {this.state.paymentArray.length == 0 ||
-          this.state.paymentArray.length > 8 ? (
+          this.state.paymentArray.length > 8 ||
+          exceedsWalletAmt ? (
             <div className="d-grid gap-2" style={{ margin: "1rem" }}>
               <Button variant="primary" disabled size="lg">
                 <b>Start Payment</b>

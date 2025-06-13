@@ -175,15 +175,16 @@ class CreateNewWalletModal extends React.Component {
                       <a
                         rel="noopener noreferrer"
                         target="_blank"
-                        href="https://testnet-faucet.dash.org/"
+                        href="https://faucet.testnet.networks.dash.org/"
+                        //href="https://testnet-faucet.dash.org/"
                       >
-                        testnet-faucet.dash.org/
+                        faucet.testnet.networks.dash.org
                       </a>
                     </b>
                   </li>
-                  <p></p>
+                  <p>This faucet is a bit wonky.</p>
 
-                  <li>
+                  {/* <li>
                     <a
                       rel="noopener noreferrer"
                       target="_blank"
@@ -191,7 +192,7 @@ class CreateNewWalletModal extends React.Component {
                     >
                       <b>faucet.test.dash.crowdnode.io/</b>
                     </a>
-                  </li>
+                  </li> */}
                 </ul>
                 {/* <h5>Testnet Block Explorer:</h5>
         <ul>

@@ -272,7 +272,7 @@ class AddPaymentComponent extends React.Component {
                       textAlign: "center",
                     }}
                   >
-                    Insufficient Wallet Funds
+                    Insufficient MultiSig Funds
                   </p>
                 </>
               ) : (

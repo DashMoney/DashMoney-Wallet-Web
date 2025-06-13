@@ -54,7 +54,7 @@ class SelectedPayGroupMsg extends React.Component {
       this.props.msg.owner.slice(0, 4) +
       this.props.msg.time.toString().slice(0, -3);
 
-    console.log("msgIdentifier: ", msgIdentifier);
+    //console.log("msgIdentifier: ", msgIdentifier);
 
     //count the number of likes here ->
     //likeObjsArray={likeObjsArray}
@@ -84,7 +84,7 @@ class SelectedPayGroupMsg extends React.Component {
 
     let message;
 
-    console.log("theMsg: ", theMsg);
+    //console.log("theMsg: ", theMsg);
 
     if (theMsg.owner === this.props.identity) {
       message = (

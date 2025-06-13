@@ -34,15 +34,18 @@ class ComingSoonModal extends React.Component {
     return (
       <Modal show={this.props.isModalShowing} contentClassName={modalBkg}>
         <Modal.Header>
-          <Modal.Title>Multisig Payments</Modal.Title>
+          <Modal.Title>CrowdFunding a Multisig</Modal.Title>
           {closeButtonColor}
         </Modal.Header>
         <Modal.Body>
           <h3 style={{ textAlign: "center", textDecoration: "bold" }}>
             Coming Soon!
           </h3>
-          {/* Enabling <b>Pay Groups</b> will allow you to form multisigs and
-          private group chats with others on Dash Platform. */}
+          <p>
+            <b>CrowdFunding</b> will allow you to submit partial transactions
+            from each member, and the final, complete transaction only sends to
+            the multisig once each member has paid.
+          </p>
         </Modal.Body>
 
         <Modal.Footer>

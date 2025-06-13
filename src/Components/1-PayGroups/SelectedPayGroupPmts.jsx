@@ -42,7 +42,33 @@ class SelectedPayGroupPmts extends React.Component {
                 <b>Pay Group's MultiSigs</b>
               )}
             </h3>
-            <div style={{ marginRight: "4rem" }}></div>
+            {this.props.isPayGroupsRefreshReady ? (
+              <Button
+                variant="primary"
+                onClick={() => {
+                  this.props.handleRefresh_PayGroups();
+                }}
+                style={{
+                  fontSize: "larger",
+                  paddingLeft: "1rem",
+                  paddingRight: "1rem",
+                }}
+              >
+                <b>Refresh</b>
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                disabled
+                style={{
+                  fontSize: "larger",
+                  paddingLeft: "1rem",
+                  paddingRight: "1rem",
+                }}
+              >
+                <b>Refresh</b>
+              </Button>
+            )}
           </Container>
         </Navbar>
         <div className="bodytext">

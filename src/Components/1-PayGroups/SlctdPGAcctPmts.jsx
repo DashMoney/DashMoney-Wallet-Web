@@ -7,7 +7,7 @@ import Col from "react-bootstrap/Col";
 
 import Button from "react-bootstrap/Button";
 
-//import SlctdPGPmtsMultisig from "./SlctdPGPmtsMultiSig";
+import SlctdPGAcctPmt from "./SlctdPGAcctPmt";
 
 class SlctdPGAcctPmts extends React.Component {
   // constructor(props) {  //MOVED TO APP STATE
@@ -17,13 +17,13 @@ class SlctdPGAcctPmts extends React.Component {
   //   };
   // }
 
-  onChange = (event) => {
-    //Payment Schedule
-    if (event.target.id === "formFilter") {
-      event.stopPropagation();
-      //this.props.handlePayGroupsOrderFilter(event.target.value);
-    }
-  };
+  // onChange = (event) => {
+  //   //Payment Schedule
+  //   if (event.target.id === "formFilter") {
+  //     event.stopPropagation();
+  //     //this.props.handlePayGroupsOrderFilter(event.target.value);
+  //   }
+  // };
 
   render() {
     let today = new Date();
@@ -38,38 +38,76 @@ class SlctdPGAcctPmts extends React.Component {
     //selectedPayGroupMbrDocs={this.props.selectedPayGroupMbrDocs}
     //selectedPayGroupECDHDocs={this.props.selectedPayGroupECDHDocs}
 
-    // accounts = yourScriptsKeys.map((scriptKey, index) => {
-    //   //console.log(yourPGDoc);
-    //   return (
-    //     <Col key={index} lg={6}>
-    //       <div style={{ marginBottom: "0.5rem" }}>
-    //         <SlctdPGPmtsMultisig
-    //           mnemonic={this.props.mnemonic}
-    //           whichNetwork={this.props.whichNetwork}
-    //           //key={index}
-    //           mode={this.props.mode}
-    //           index={index}
-    //           scriptKey={scriptKey}
-    //           today={today}
-    //           yesterday={yesterday}
-    //           identity={this.props.identity} //For if my review so can edit
-    //           uniqueName={this.props.uniqueName}
-    //           //
-    //           showAcceptMultiSigAcctModal={
-    //             this.props.showAcceptMultiSigAcctModal
-    //           }
-    //           YourPGsMultiSigUTXOs={this.props.YourPGsMultiSigUTXOs}
-    //           handleGoToPayGroupAcct={this.props.handleGoToPayGroupAcct}
-    //           //
-    //           selectedPayGroupDoc={this.props.selectedPayGroupDoc}
-    //           selectedPayGroupNameDocs={this.props.selectedPayGroupNameDocs}
-    //           selectedPayGroupMbrDocs={this.props.selectedPayGroupMbrDocs}
-    //           selectedPayGroupECDHDocs={this.props.selectedPayGroupECDHDocs}
-    //         />
-    //       </div>
-    //     </Col>
-    //   );
-    // });
+    //HERE -> // type,multiSigAddr,utxos,payouts,txId,sig
+
+    let thePayInitPayments = this.props.selectedPayGroupPayInitDocs.filter(
+      (payInit) => {
+        return payInit.txData.type === "payment";
+      }
+    );
+
+    console.log("thePayInitPayments: ", thePayInitPayments);
+
+    let selectedPayInitPayments = thePayInitPayments.filter((selDoc) => {
+      return (
+        this.props.selectedPayGroupDoc.scripts.pub[
+          this.props.selectedPayGroupAcctIndex
+        ][0] === selDoc.txData.multiSigAddr
+      );
+    });
+
+    console.log("selectedPayInitPayments: ", selectedPayInitPayments);
+
+    /*
+   
+
+    Then For each PayInit pass to AcctPmt Card
+
+        AcctPmt Card will sort PayDocs and Display Data
+
+        Signed or Not Signed
+
+        Then add Signature button
+
+        and when enough -> Broadcast TX
+        
+
+     * 
+     */
+
+    let payments = selectedPayInitPayments.map((payInitDoc, index) => {
+      //console.log(yourPGDoc);
+      return (
+        <Col key={index} lg={6}>
+          <div style={{ marginBottom: "0.5rem" }}>
+            <SlctdPGAcctPmt
+              mnemonic={this.props.mnemonic}
+              whichNetwork={this.props.whichNetwork}
+              //key={index}
+              mode={this.props.mode}
+              index={index}
+              payInitDoc={payInitDoc}
+              today={today}
+              yesterday={yesterday}
+              identity={this.props.identity} //For if my review so can edit
+              uniqueName={this.props.uniqueName}
+              //
+              selectedPayGroupAcctIndex={this.props.selectedPayGroupAcctIndex}
+              //
+              YourPGsMultiSigUTXOs={this.props.YourPGsMultiSigUTXOs}
+              handleGoToPayGroupAcct={this.props.handleGoToPayGroupAcct}
+              showConfirmAcceptPmtModal={this.props.showConfirmAcceptPmtModal}
+              //
+              selectedPayGroupDoc={this.props.selectedPayGroupDoc}
+              selectedPayGroupNameDocs={this.props.selectedPayGroupNameDocs}
+              selectedPayGroupMbrDocs={this.props.selectedPayGroupMbrDocs}
+              selectedPayGroupECDHDocs={this.props.selectedPayGroupECDHDocs}
+              selectedPayGroupPayDocs={this.props.selectedPayGroupPayDocs}
+            />
+          </div>
+        </Col>
+      );
+    });
 
     let formBkg;
     let formText;
@@ -116,21 +154,18 @@ class SlctdPGAcctPmts extends React.Component {
           </Col>
         </Row>
         <p></p>
-        <p style={{ textAlign: "center" }}>
-          MultiSig Payments will appear here.
-        </p>
-        {/* 
-        {yourScriptsKeys.length === 0 ? (
+
+        {selectedPayInitPayments.length === 0 ? (
           <>
             <p style={{ textAlign: "center" }}>
-              MultiSig Accounts will appear here.
+              Payments for Multisig will appear here.
             </p>
           </>
         ) : (
           <>
-             <Row className="justify-content-md-center">{accounts}</Row> 
+            <Row className="justify-content-md-center">{payments}</Row>
           </>
-        )} */}
+        )}
       </>
     );
   }
