@@ -2825,9 +2825,20 @@ class App extends React.Component {
 
         //returnedDoc.forMbrs = JSON.parse(returnedDoc.forMbrs);
         //Already Parsed ^^
-        if (returnedDoc.mbrsList !== undefined) {
+        //ALSO NEED TO FOR EACH MBR# ->  ***
+        let mbrNum = parseInt(returnedDoc.$type.slice(4, 5));
+
+        if (mbrNum === 1) {
           returnedDoc.mbrsList = JSON.parse(returnedDoc.mbrsList);
+        } else {
+          for (let i = 2; i <= mbrNum; i++) {
+            returnedDoc[`mbr${i}`] = Identifier.from(
+              returnedDoc[`mbr${i}`],
+              "base64"
+            ).toJSON();
+          }
         }
+
         returnedDoc.scripts = JSON.parse(returnedDoc.scripts);
 
         returnedDoc.mbrsXPubs = this.state.selectedPayGroupDoc.mbrsXPubs;
@@ -2978,8 +2989,18 @@ class App extends React.Component {
 
         returnedDoc.scripts = JSON.parse(returnedDoc.scripts);
 
-        if (returnedDoc.mbrsList !== undefined) {
+        //ALSO NEED TO FOR EACH MBR# ->  ***
+        let mbrNum = parseInt(returnedDoc.$type.slice(4, 5));
+
+        if (mbrNum === 1) {
           returnedDoc.mbrsList = JSON.parse(returnedDoc.mbrsList);
+        } else {
+          for (let i = 2; i <= mbrNum; i++) {
+            returnedDoc[`mbr${i}`] = Identifier.from(
+              returnedDoc[`mbr${i}`],
+              "base64"
+            ).toJSON();
+          }
         }
 
         returnedDoc.mbrsXPubs = this.state.selectedPayGroupDoc.mbrsXPubs;
