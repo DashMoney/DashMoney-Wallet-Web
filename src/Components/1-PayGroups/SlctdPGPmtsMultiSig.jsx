@@ -74,7 +74,7 @@ class SlctdPGPmtsMultisig extends React.Component {
     }
 
     if (ismbrDoc === undefined) {
-      return <Badge bg="warning">Missing</Badge>;
+      return <Badge bg="warning">Missing MemberDoc</Badge>;
     }
 
     if (ismbrDoc === "Error1") {
@@ -129,7 +129,7 @@ class SlctdPGPmtsMultisig extends React.Component {
       }
     }
 
-    // console.log("ownerArrayOfMbrIds: ", ownerArrayOfMbrIds);
+    console.log("ownerArrayOfMbrIds: ", ownerArrayOfMbrIds);
 
     //3 DIFFERENT SCRIPT ADDRS -> NO JUST 2
     // BUILD SCRIPT aDDR FOR VERIFY AND JOIN ADDR <-**
@@ -229,6 +229,8 @@ class SlctdPGPmtsMultisig extends React.Component {
         return doc.$ownerId === nameDoc.$ownerId;
       });
 
+      console.log(mbrDoc);
+
       if (mbrDoc === undefined) {
         ismbrDocVerified = undefined;
       } else if (mbrDoc.scripts === "") {
@@ -243,6 +245,8 @@ class SlctdPGPmtsMultisig extends React.Component {
         //MAYBE ADD ANOTHER VERIFY HERE FOR SCRIPT VS BUILD SCRIPT
         ismbrDocVerified = "Error3";
       }
+
+      console.log("mbrDocStatus: ", ismbrDocVerified);
 
       if (nameDoc.label !== "No Name Avail") {
         return (
@@ -376,7 +380,7 @@ class SlctdPGPmtsMultisig extends React.Component {
               {/* <p>This will be the address to copy and the amount from UTXOs</p> */}
               <div className="d-grid gap-2" style={{ margin: "1rem" }}>
                 <Button
-                  variant="success"
+                  variant="primary"
                   size="lg"
                   onClick={() =>
                     this.props.handleGoToPayGroupAcct(this.props.scriptKey)

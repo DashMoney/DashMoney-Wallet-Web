@@ -173,6 +173,17 @@ class SlctdPGAcctPage extends React.Component {
               ) : (
                 <></>
               )}
+              {!this.props.isLoadingPayGroupAcct && acctBalance === 0 ? (
+                <>
+                  <div className="d-grid gap-2" style={{ margin: "1rem" }}>
+                    <Button variant="success" size="lg" disabled>
+                      <b>*Requires Balance to Start Payment*</b>
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <></>
+              )}
 
               {!this.props.isLoadingPayGroupAcct ? (
                 <>
@@ -231,6 +242,9 @@ class SlctdPGAcctPage extends React.Component {
                 //
                 showConfirmAcceptPmtModal={this.props.showConfirmAcceptPmtModal}
                 selectedPayGroupAcctIndex={this.props.selectedPayGroupAcctIndex}
+                showConfirmBroadcastPmtModal={
+                  this.props.showConfirmBroadcastPmtModal
+                }
                 //
                 selectedPayGroupDoc={this.props.selectedPayGroupDoc}
                 selectedPayGroupNameDocs={this.props.selectedPayGroupNameDocs}

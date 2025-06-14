@@ -68,7 +68,18 @@ class SelectedPayGroupMsg extends React.Component {
 
     // and make a name List for hover
 
-    let likeNamesList = filteredLikes.map((x) => x.label);
+    let likeNamesList = filteredLikes.map((x, index) => {
+      return (
+        <p key={index} style={{ marginBottom: "0rem" }}>
+          {x.label}
+        </p>
+      );
+    });
+
+    // likeNamesList = [
+    //   <p style={{ marginBottom: "0rem" }}>alex</p>,
+    //   <p style={{ marginBottom: "0rem" }}>bobby</p>,
+    // ];
 
     //yourLikes={this.props.yourLikes}
 

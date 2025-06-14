@@ -30,9 +30,7 @@ class ConfirmBroadcastPmtModal extends React.Component {
 
   handleSubmitClick = (event) => {
     event.preventDefault();
-
-    this.props.createPayGroupAcctPayInit();
-
+    this.props.broadcastMultiSigPmt();
     this.handleCloseClick();
   };
 
@@ -116,7 +114,7 @@ class ConfirmBroadcastPmtModal extends React.Component {
           show={this.props.isModalShowing}
         >
           <Modal.Header>
-            <Modal.Title>Confirm Payment</Modal.Title>
+            <Modal.Title>Broadcast Payment</Modal.Title>
             {closeButtonColor}
           </Modal.Header>
           <Modal.Body>
@@ -164,11 +162,11 @@ class ConfirmBroadcastPmtModal extends React.Component {
             <>
               {this.state.loadTime >= 1 ? (
                 <Button variant="primary" disabled>
-                  <b>Start Payment ({this.state.loadTime})</b>
+                  <b>Broadcast TX ({this.state.loadTime})</b>
                 </Button>
               ) : (
                 <Button variant="primary" onClick={this.handleSubmitClick}>
-                  <b>Start Payment</b>
+                  <b>Broadcast TX</b>
                 </Button>
               )}
             </>

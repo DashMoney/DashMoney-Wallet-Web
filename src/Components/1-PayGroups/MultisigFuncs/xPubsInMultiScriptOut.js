@@ -25,9 +25,11 @@ export default function xPubsInMultiScriptOut(
 
   //console.log("theIndex: ", theIndex);
 
+  let theUseCase = 1; //1 PUBLIC, 2 = PRIV, 3 = OTHER
+
   let mbrPublicKeys = theXPubs.map((x) => {
     return new HDPublicKey(x)
-      .deriveChild(`m/${theNumOfMbrsReq}/${theIndex}`)
+      .deriveChild(`m/${theUseCase}/${theNumOfMbrsReq}/${theIndex}`)
       .toObject().publicKey;
   });
 

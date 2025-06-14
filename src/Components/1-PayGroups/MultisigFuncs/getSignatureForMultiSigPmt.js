@@ -41,10 +41,10 @@ export default function getSignature(
 
   //WILL ACTUALLY NEED INDEX AND THE FROMMBRS -> .mbrsXPubs
   console.log("yourMbrDoc.mbrsXPubs: ", yourMbrDoc.mbrsXPubs);
-
+  let theUseCase = 1; //1 PUBLIC, 2 = PRIV, 3 = OTHER
   let mbrPublicKeys = yourMbrDoc.mbrsXPubs.map((x) => {
     return new HDPublicKey(x)
-      .deriveChild(`m/${theNumOfMbrsReq}/${theMultiSigIndex}`)
+      .deriveChild(`m/${theUseCase}/${theNumOfMbrsReq}/${theMultiSigIndex}`)
       .toObject().publicKey;
   });
 
@@ -69,8 +69,10 @@ export default function getSignature(
 
   var hdPrivateKey = wallet.toHDPrivateKey(undefined, whichNetwork); //in WIF??
 
+  //let theUseCase = 1; //1 PUBLIC, 2 = PRIV, 3 = OTHER
+
   let hdPrivateKeyChild = hdPrivateKey.deriveChild(
-    `m/2025'/5'/3'/${yourMbrDoc.timeIndex}'/${theNumOfMbrsReq}/${theMultiSigIndex}`
+    `m/2025'/5'/3'/${yourMbrDoc.timeIndex}'/${theUseCase}/${theNumOfMbrsReq}/${theMultiSigIndex}`
   );
 
   let signature = theMultiSigTx.getSignatures(
@@ -88,9 +90,11 @@ export default function getSignature(
   //console.log(signature.sigtype);
   //console.log('istheMultiSigTxfullySigned: ', theMultiSigTx.isFullySigned());
 
-  let theSignatureToPass = signature.signature.toString(); //JSON.stringify(signature);
+  //let theSignatureToPass = signature.signature.toString();
+  //PASS THE FULL SIGNATURE OBJECT SO DON'T HAVE TO REBUILD.
+  let theSignatureToPass = JSON.stringify(signature);
 
-  //console.log("theSignatureToPass", JSON.stringify(theSignatureToPass));
+  console.log("theSignatureToPass", theSignatureToPass);
 
   // ALL THE DATA IS THE EXACT SAME AS YOU WOULD THINK!! <- ***
 

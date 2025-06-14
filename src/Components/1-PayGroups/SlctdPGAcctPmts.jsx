@@ -97,6 +97,9 @@ class SlctdPGAcctPmts extends React.Component {
               YourPGsMultiSigUTXOs={this.props.YourPGsMultiSigUTXOs}
               handleGoToPayGroupAcct={this.props.handleGoToPayGroupAcct}
               showConfirmAcceptPmtModal={this.props.showConfirmAcceptPmtModal}
+              showConfirmBroadcastPmtModal={
+                this.props.showConfirmBroadcastPmtModal
+              }
               //
               selectedPayGroupDoc={this.props.selectedPayGroupDoc}
               selectedPayGroupNameDocs={this.props.selectedPayGroupNameDocs}

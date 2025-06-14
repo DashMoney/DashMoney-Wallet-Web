@@ -97,6 +97,8 @@ import ConfirmCreatePayInitModal from "./Components/1-PayGroups/AcctModals/Confi
 
 import ConfirmAcceptPmtModal from "./Components/1-PayGroups/AcctModals/ConfirmAcceptPmtModal";
 
+import ConfirmBroadcastPmtModal from "./Components/1-PayGroups/AcctModals/ConfirmBroadcastPmtModal";
+
 // import ProxyPage from "./Components/1-ProxyAccounts/ProxyPage";
 // import HowProxyModal from "./Components/1-ProxyAccounts/HowProxyModal";
 
@@ -133,7 +135,9 @@ import dapiClientNoWallet from "./Components/DapiClientNoWallet";
 
 //const Dash = require("dash");
 import Dash from "dash";
+
 import getSignature from "./Components/1-PayGroups/MultisigFuncs/getSignatureForMultiSigPmt";
+import buildMultiSigTX from "./Components/1-PayGroups/MultisigFuncs/buildMultiSigTX";
 
 const {
   Core: {
@@ -143,7 +147,7 @@ const {
     //PublicKey,
     Script,
     Address,
-    //Transaction,
+    Transaction,
     //Output,
     //Networks,
     //Block,
@@ -233,6 +237,9 @@ class App extends React.Component {
 
       selectedPayGroupPayInitDocs: [],
       selectedPayGroupPayDocs: [],
+
+      selectedYourPayDoc: "",
+      selectedPmtFullSigs: [],
 
       isLoadingPayGroupAcct: true,
       selectedPayGroupAcctIndex: "",
@@ -548,11 +555,11 @@ class App extends React.Component {
     if (this.state.whichNetwork === "mainnet") {
       clientOpts = {
         network: this.state.whichNetwork,
-        dapiAddresses: [
-          //'149.28.241.190:443',
-          "134.255.182.186:443",
-          "185.198.234.25:443",
-        ],
+        // dapiAddresses: [
+        //   //'149.28.241.190:443',
+        //   "134.255.182.186:443",
+        //   "185.198.234.25:443",
+        // ],
         wallet: {
           mnemonic: theMnemonic,
           offlineMode: true,
@@ -1433,14 +1440,19 @@ class App extends React.Component {
       this.setState(
         {
           // isLoadingWallet: false,
-          isLoadingPayGroups: false,
+          //isLoadingPayGroups: false,
 
           PayGroups1: false,
           PayGroups2: false,
         },
-        () => this.pullMultiSigUTXOs()
+        () => this.addReSelectToRaceRequirement()
       );
     }
+  };
+
+  addReSelectToRaceRequirement = () => {
+    this.pullMultiSigUTXOs();
+    this.postRefreshSelected();
   };
 
   pullMultiSigUTXOs = () => {
@@ -1586,7 +1598,7 @@ class App extends React.Component {
           let docArray = [];
           for (const n of d) {
             let returnedDoc = n.toJSON();
-            //console.log("MbrDoc:\n", returnedDoc);
+           // console.log("MbrDoc:\n", returnedDoc);
 
             returnedDoc.payGroupId = Identifier.from(
               returnedDoc.payGroupId,
@@ -3011,6 +3023,74 @@ class App extends React.Component {
     this.pullMultiSigUTXOs();
   };
 
+  postRefreshSelected = () => {
+    if (this.state.selectedPayGroupDoc !== "") {
+      let mbrNum = parseInt(this.state.selectedPayGroupDoc.$type.slice(4, 5));
+
+      let ownerArrayOfMbrIds = [];
+
+      if (mbrNum === 1) {
+        ownerArrayOfMbrIds = [...this.state.selectedPayGroupDoc.mbrsList];
+      } else {
+        for (let i = 2; i <= mbrNum; i++) {
+          ownerArrayOfMbrIds.push(this.state.selectedPayGroupDoc[`mbr${i}`]);
+        }
+      }
+
+      // console.log("ownerArrayOfMbrIds: ", ownerArrayOfMbrIds);
+
+      let mbrNameDocs = ownerArrayOfMbrIds.map((mbrId) => {
+        let mbrName = this.state.YourPayGroupsNames.find((nameDoc) => {
+          return nameDoc.$ownerId === mbrId;
+        });
+
+        if (mbrName === undefined) {
+          mbrName = {
+            label: "No Name Avail",
+            $ownerId: mbrId,
+          };
+        }
+
+        return mbrName;
+      });
+
+      //GET THEIR MBR DOC
+
+      let mbrDocs = ownerArrayOfMbrIds.map((mbrId) => {
+        let mbrDoc = this.state.YourPayGroupsMbrs.find((mbr) => {
+          return (
+            mbr.$ownerId === mbrId &&
+            mbr.payGroupId === this.state.selectedPayGroupDoc.payGroupId
+          );
+        });
+
+        return mbrDoc;
+      });
+
+      mbrDocs = mbrDocs.filter((doc) => doc !== undefined);
+
+      let pubKeyDocs = ownerArrayOfMbrIds.map((mbrId) => {
+        let pubKeyDoc = this.state.YourPayGroupsPubKeys.find((pub) => {
+          return pub.$ownerId === mbrId;
+        });
+        return pubKeyDoc;
+      });
+
+      pubKeyDocs = pubKeyDocs.filter((doc) => doc !== undefined);
+
+      this.setState({
+        selectedPayGroupNameDocs: mbrNameDocs,
+        selectedPayGroupMbrDocs: mbrDocs,
+        selectedPayGroupECDHDocs: pubKeyDocs,
+        isLoadingPayGroups: false,
+      });
+    } else {
+      this.setState({
+        isLoadingPayGroups: false,
+      });
+    }
+  };
+
   /// PayGroupPage
   //need to SEND TO MSGS QUERY!! ->
   decideFinalizeOrGoToPage = (
@@ -3269,8 +3349,16 @@ class App extends React.Component {
         //console.log("FinalizeMbrDoc:\n", returnedDoc);
 
         //NEW//
-        returnedDoc.mbrsXPubs = DecryptedFromMbrs.xPubs;
-        // THIS ONE DOESN'T INCLUDE OWN XPUB LIKE ON INITIAL QUERY <-**
+        returnedDoc.mbrsXPubs = JSON.parse(DecryptedFromMbrs).xPubs;
+
+        returnedDoc.mbrsXPubs.push(
+          getYourXPub(
+            this.state.mnemonic,
+            returnedDoc.timeIndex,
+            this.state.whichNetwork
+          )
+        );
+
         returnedDoc.allDocKey = AllDocKey;
         //
 
@@ -4521,10 +4609,10 @@ class App extends React.Component {
       .finally(() => client.disconnect());
   };
 
-  showConfirmBroadcastPmtModal = (yourPayDoc, theSignaturesDER) => {
+  showConfirmBroadcastPmtModal = (yourPayDoc, theFullSigs) => {
     // type,multiSigAddr,utxos,payouts,txId,sig
 
-    let theUTXOsToUse = thePayInitDoc.txData.utxos.map((utxoSimplified) => {
+    let theUTXOsToUse = yourPayDoc.txData.utxos.map((utxoSimplified) => {
       //txid: utxo.txid, outputIndex: utxo.outputIndex
       let fullUTXO = this.state.YourPGsMultiSigUTXOs.find((fullUTXO) => {
         return (
@@ -4536,17 +4624,13 @@ class App extends React.Component {
       return fullUTXO;
     });
 
-    // let requestIndex = this.state.ReqsFromYou.findIndex((req) => {
-    //   return req.$id === theRequest.$id;
-    // });
-    //CHANGE TO PAYDOC OR PAY INIT -> BASED ON WHICH IS YOURS
-
     this.setState({
-      selectedPayInitDoc: thePayInitDoc,
+      selectedYourPayDoc: yourPayDoc,
+      selectedPmtFullSigs: theFullSigs,
 
       selectedMultiSigUTXOsToUse: theUTXOsToUse,
-      selectedMultiSigAddr: thePayInitDoc.txData.multiSigAddr,
-      selectedMultiSigPayouts: thePayInitDoc.txData.payouts,
+      selectedMultiSigAddr: yourPayDoc.txData.multiSigAddr,
+      selectedMultiSigPayouts: yourPayDoc.txData.payouts,
 
       presentModal: "ConfirmBroadcastPmtModal",
       isModalShowing: true,
@@ -4554,77 +4638,73 @@ class App extends React.Component {
   };
 
   //THIS IS THE ACTUAL PAYMENT AND TX
-  broadcastMultiSigPmt = (addedMessage) => {
+  broadcastMultiSigPmt = () => {
     // console.log(addedMessage);
 
     this.setState({
-      isLoading2Party: true,
-      isLoadingWallet: true,
-      //messageToSend2Party: "MSGFORpaidthr",
+      isLoadingPayGroups: true,
+      isLoadingPayGroupAcct: true,
     });
+    //NOT FROM WALLET**
+    // const client = new Dash.Client(
+    //   dapiClient(
+    //     this.state.whichNetwork,
+    //     this.state.mnemonic,
+    //     this.state.skipSynchronizationBeforeHeight
+    //   )
+    // );
 
-    const client = new Dash.Client(
-      dapiClient(
-        this.state.whichNetwork,
-        this.state.mnemonic,
-        this.state.skipSynchronizationBeforeHeight
-      )
-    );
+    // //SEND OR BROADCAST FROM DAPI
+    const client = new Dash.Client({ network: this.state.whichNetwork });
 
     const payToRecipient = async () => {
-      const account = await client.getWalletAccount();
+      // const account = await client.getWalletAccount();
+      //NOT FROM WALLET ^^
 
-      // createFullTX(
-      //   theRequest,
-      //   theRequestPubKeyDoc,
-      //   theResponse,
-      //   theResponsePubKeyDoc,
-      //   whichNetwork,
-      //   theTx, //txId,script,amt
-      //   theMnemonic,
-      //   theAddress
-      // )
+      // buildMultiSigTX(
+      //   yourMbrDoc,
+      //   yourPayDoc,
+      //   theScriptIndex,
+      //   theUTXOs, // selected UTXos to use here ->
+      //   thePayouts, //tuples of [addr,amts]
+      //   theSignatures //full signature objects
+      // );
 
-      let transaction = createFullTX(
-        this.state.requestToEdit,
-        this.state.Your2PartyPubKey,
-        this.state.responseToUse,
-        this.state.responsePubKeyDocToUse,
-        this.state.whichNetwork,
-        this.state.txToUse,
-        this.state.mnemonic,
-        this.state.accountAddress
+      let transaction = buildMultiSigTX(
+        this.state.selectedPayGroupDoc,
+        this.state.selectedYourPayDoc,
+        this.state.selectedPayGroupAcctIndex,
+
+        this.state.selectedMultiSigUTXOsToUse,
+        this.state.selectedMultiSigPayouts,
+        this.state.selectedPmtFullSigs
       );
 
       //return transaction.id; //Use to disable TX
-      return account.broadcastTransaction(transaction);
+      return client
+        .getDAPIClient()
+        .core.broadcastTransaction(transaction.toBuffer());
+      //return account.broadcastTransaction(transaction); -> NOT WITH WALLET,BUT WITH DAPI.
     };
 
     payToRecipient()
       .then((d) => {
         console.log("Payment TX:\n", d);
-
-        this.setState(
-          {
-            sendSuccess2Party: true, //TX go through //DO I NEED THIS? BC THE DOCUMENT WILL JUST CHANGE TO REFLECT
-          },
-          () => this.editRetrieveFundsReqWithTX(d, addedMessage)
-        );
+        // let txOutput = new Transaction(d.transaction).toJSON();
+        // console.log("Tx:\n", txOutput);
+        this.editPayDocWithTX(d);
       })
       .catch((e) => {
         console.error("Something went wrong:\n", e);
         this.setState({
-          isLoading2Party: false,
-          isLoadingWallet: false,
-          sendFailure2Party: true, //TX go through
+          isLoadingPayGroups: false,
+          isLoadingPayGroupAcct: false,
         });
       });
     //.finally(() => client.disconnect()); // <- Caused Error in the past, added back seems to fix more recent payment error. -> YES error dont use
   };
 
-  editPayDocWithTX = (theTxId, addedMessage) => {
-    //console.log(addedMessage);
-
+  editPayDocWithTX = (theTxId) => {
     const client = new Dash.Client(
       dapiClient(
         this.state.whichNetwork,
@@ -4633,75 +4713,45 @@ class App extends React.Component {
       )
     );
 
-    // *** *** ***
+    let txDataToPass = this.state.selectedYourPayDoc.txData;
 
-    let theMsgObject = [];
+    //Need to select of payInit OR payDoc ->
 
-    if (addedMessage !== "") {
-      let theTime = Date.now();
+    let payDocType = this.state.selectedYourPayDoc.$type;
 
-      theMsgObject = [
-        {
-          msg: addedMessage,
-          time: theTime,
-        },
-      ];
-    }
+    txDataToPass.txId = theTxId;
 
-    let propsToEncrypt = {
-      txId: theTxId,
-      sig: this.state.requestToEdit.sigObject,
-      msgs: [...theMsgObject, ...this.state.requestToEdit.msgObject],
-    };
-
-    //console.log("propsToEncrypt: ", propsToEncrypt);
-
-    let timeStamp = this.state.requestToEdit.$createdAt - 1729873000000;
-
-    //SEND OBJECT TO ENCRYPT ->
-
-    let encryptedProps = encryptMyReq(
-      timeStamp,
-      propsToEncrypt,
-      // this.state.Your2PartyPubKey
-      this.state.responsePubKeyDocToUse,
-      this.state.mnemonic,
-      this.state.whichNetwork
+    let encryptedTxData = EncryptChatDoc4Edit(
+      JSON.stringify(txDataToPass),
+      this.state.selectedPayGroupDoc.allDocKey
     );
 
-    // *** *** ***
+    console.log("encryptedTxData: ", encryptedTxData);
 
-    const edit2PartyDoc = async () => {
+    //TEST//
+    let decryptedTxData = DecryptChatDoc4Edit(
+      encryptedTxData,
+      this.state.selectedPayGroupDoc.allDocKey
+    );
+
+    decryptedTxData = JSON.parse(decryptedTxData);
+
+    console.log("decryptedTxData: ", decryptedTxData);
+    //
+
+    const editPayDoc = async () => {
       const { platform } = client;
 
-      let identity = "";
-      if (this.state.identityRaw !== "") {
-        identity = this.state.identityRaw;
-      } else {
-        identity = await platform.identities.get(this.state.identity);
-      } // Your identity ID
+      let identity = await platform.identities.get(this.state.identity);
 
       const [document] = await client.platform.documents.get(
-        "TwoPartyContract.request",
+        `PayGroupsContract.${payDocType}`,
         {
-          where: [["$id", "==", this.state.requestToEdit.$id]],
+          where: [["$id", "==", this.state.selectedYourPayDoc.$id]],
         }
       );
 
-      //console.log("signatureToAdd", this.state.signatureToAdd);
-      //RELEASE THE FUNDS
-      // document.set("txId", theTxId);
-      // let theMsgsToAddTo = [...this.state.requestToEdit.msgObject];
-      // theMsgsToAddTo.push(theMsgObject);
-      // //console.log("theMsgsToAddTo", theMsgsToAddTo);
-      // if (addedMessage !== "") {
-      //   document.set("msgObject", JSON.stringify(theMsgsToAddTo));
-      // }
-
-      //CHANGE THE DOCUMENT.SET ->
-
-      document.set("req", Buffer.from(encryptedProps.req).toString("base64"));
-      document.set("fromReq", encryptedProps.fromReq);
+      document.set("txData", encryptedTxData);
 
       await platform.documents.broadcast({ replace: [document] }, identity);
       return document;
@@ -4715,56 +4765,71 @@ class App extends React.Component {
       //############################################################
     };
 
-    edit2PartyDoc()
+    editPayDoc()
       .then((d) => {
         let returnedDoc = d.toJSON();
 
-        returnedDoc.toId = Identifier.from(returnedDoc.toId, "base64").toJSON();
-
-        returnedDoc.forId = Identifier.from(
-          returnedDoc.forId,
+        returnedDoc.payGroupId = Identifier.from(
+          returnedDoc.payGroupId,
           "base64"
         ).toJSON();
+        if (payDocType === "payDoc") {
+          returnedDoc.payInitId = Identifier.from(
+            returnedDoc.payInitId,
+            "base64"
+          ).toJSON();
+        }
+        returnedDoc.txData = txDataToPass;
 
-        //returnedDoc.msgObject = JSON.parse(returnedDoc.msgObject);
+        console.log("Edited PayDoc:\n", returnedDoc);
 
-        // let propsToEncrypt = {
-        //   txId: this.state.requestToEdit.txId,
-        //   sig: this.state.requestToEdit.sigObject,
-        //   msgs: [theMsgObject, ...this.state.requestToEdit.msgObject],
-        // };
+        if (payDocType === "payDoc") {
+          let payDocIndex = this.state.selectedPayGroupPayDocs.findIndex(
+            (payDoc) => {
+              return payDoc.$id === this.state.selectedYourPayDoc.$id;
+            }
+          );
 
-        returnedDoc.txId = propsToEncrypt.txId;
-        returnedDoc.sigObject = propsToEncrypt.sig;
-        returnedDoc.msgObject = propsToEncrypt.msgs;
-        returnedDoc.error = "";
+          let editedPayDocs = this.state.selectedPayGroupPayDocs;
 
-        console.log("Edited 2Party Req:\n", returnedDoc);
+          editedPayDocs.splice(payDocIndex, 1, returnedDoc);
 
-        let editedRequests = this.state.ReqsFromYou;
+          this.setState(
+            {
+              selectedPayGroupPayDocs: editedPayDocs,
+              isLoadingPayGroupAcct: false,
+              isLoadingPayGroups: false,
+            },
+            () => this.loadIdentityCredits()
+          );
+        } else {
+          let payInitIndex = this.state.selectedPayGroupPayInitDocs.findIndex(
+            (payDoc) => {
+              return payDoc.$id === this.state.selectedYourPayDoc.$id;
+            }
+          );
+          let editedPayInits = this.state.selectedPayGroupPayInitDocs;
 
-        editedRequests.splice(this.state.requestToEditIndex, 1, returnedDoc);
+          editedPayInits.splice(payInitIndex, 1, returnedDoc);
 
-        this.setState(
-          {
-            ReqsFromYou: editedRequests,
-            isLoading2Party: false,
-          },
-          () => this.loadIdentityCredits()
-        );
-
-        this.get2PartyWallet();
+          this.setState(
+            {
+              selectedPayGroupPayInitDocs: editedPayInits,
+              isLoadingPayGroupAcct: false,
+              isLoadingPayGroups: false,
+            },
+            () => this.loadIdentityCredits()
+          );
+        }
+        this.pullMultiSigUTXOs();
       })
       .catch((e) => {
-        this.setState(
-          {
-            isLoading2Party: false,
-            // sendPmtMsgFailure2Party: true,
-          },
-          () => this.get2PartyWallet()
-        );
+        this.setState({
+          isLoadingPayGroupAcct: false,
+          isLoadingPayGroups: false,
+        });
 
-        console.error("Something went wrong editing 2 Party request:\n", e);
+        console.error("Something went wrong editing PayDoc with txId:\n", e);
       })
       .finally(() => client.disconnect());
   };
@@ -8584,6 +8649,7 @@ class App extends React.Component {
                 whichNetwork={this.state.whichNetwork}
                 showModal={this.showModal}
                 showConfirmAcceptPmtModal={this.showConfirmAcceptPmtModal}
+                showConfirmBroadcastPmtModal={this.showConfirmBroadcastPmtModal}
                 // handlePayGroupAcctBackArrow={this.handlePayGroupAcctBackArrow}
                 handleSelectedDapp={this.handleSelectedDapp}
                 YourPGsMultiSigUTXOs={this.state.YourPGsMultiSigUTXOs}
@@ -8903,6 +8969,26 @@ class App extends React.Component {
          *      ################
          *      ###
          *      ###            */}
+
+        {this.state.isModalShowing &&
+        this.state.presentModal === "ConfirmBroadcastPmtModal" ? (
+          <ConfirmBroadcastPmtModal
+            whichNetwork={this.state.whichNetwork}
+            uniqueName={this.state.uniqueName}
+            selectedPayGroupDoc={this.state.selectedPayGroupDoc}
+            selectedPayGroupAcctIndex={this.state.selectedPayGroupAcctIndex}
+            YourPGsMultiSigUTXOs={this.state.YourPGsMultiSigUTXOs}
+            selectedMultiSigAddr={this.state.selectedMultiSigAddr}
+            selectedMultiSigPayouts={this.state.selectedMultiSigPayouts}
+            broadcastMultiSigPmt={this.broadcastMultiSigPmt}
+            isModalShowing={this.state.isModalShowing}
+            hideModal={this.hideModal}
+            mode={this.state.mode}
+            closeTopNav={this.closeTopNav}
+          />
+        ) : (
+          <></>
+        )}
 
         {this.state.isModalShowing &&
         this.state.presentModal === "ConfirmAcceptPmtModal" ? (

@@ -39,9 +39,9 @@ export default function dapiClientNoWallet(theNetwork) {
         DPNSContract: {
           contractId: "GWRSAVFMjXx8HpQFaNJMqBV7MBgMK4br5UESsB4S31Ec",
         },
-        // PayGroupsContract: {
-        //   contractId: "",
-        // },
+        PayGroupsContract: {
+          contractId: "BFyizR36K8x3CGJ9qFQdZLphBfqukkZtBaSc7SRDsnKv",
+        },
       },
     };
   } else {

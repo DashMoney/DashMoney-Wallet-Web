@@ -263,7 +263,7 @@ class SelectedPayGroupPage extends React.Component {
               )}
             </Col>
           </Row>
-          <p></p>
+
           {chatMsgs.length > 4 ? (
             <>
               <div className="tenfooter"></div>

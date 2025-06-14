@@ -299,13 +299,13 @@ class SlctdPGAcctPmt extends React.Component {
     ) {
       isPaymentReadyToBroadcast = true;
       availMbrPayDocs.forEach((payDoc) => {
-        gatherSigs.push(payDoc.txData.sig);
+        gatherSigs.push(JSON.parse(payDoc.txData.sig));
       });
     }
 
     //MAYBE ADD A VERIFY THAT YOUR PAY DOC MATCHES THE PAYINIT OR IS THE PAY INIT ->  USE YOUR DOC, BE IT THE PAYINIT OR PAYDOC and I already have my doc - yourPaymentDoc
 
-    console.log("gatheredSigs: ", gatherSigs);
+    //console.log("gatheredSigs: ", gatherSigs);
 
     return (
       <Card
