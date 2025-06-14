@@ -246,7 +246,7 @@ class SlctdPGPmtsMultisig extends React.Component {
         ismbrDocVerified = "Error3";
       }
 
-      console.log("mbrDocStatus: ", ismbrDocVerified);
+      //console.log("mbrDocStatus: ", ismbrDocVerified);
 
       if (nameDoc.label !== "No Name Avail") {
         return (

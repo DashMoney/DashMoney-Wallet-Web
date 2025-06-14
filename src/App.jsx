@@ -1598,7 +1598,7 @@ class App extends React.Component {
           let docArray = [];
           for (const n of d) {
             let returnedDoc = n.toJSON();
-           // console.log("MbrDoc:\n", returnedDoc);
+            // console.log("MbrDoc:\n", returnedDoc);
 
             returnedDoc.payGroupId = Identifier.from(
               returnedDoc.payGroupId,
@@ -8612,28 +8612,32 @@ class App extends React.Component {
             <></>
           )}
 
-          {this.state.selectedDapp === "Create Pay Group" ? (
-            <>
-              <CreatePayGroupPage
-                isLoginComplete={isLoginComplete}
-                isLoading2Party={this.state.isLoading2Party}
-                identity={this.state.identity}
-                identityInfo={this.state.identityInfo}
-                uniqueName={this.state.uniqueName}
-                mode={this.state.mode}
-                //showModal={this.showModal}
+          <Row className="justify-content-md-center">
+            <Col md={9} lg={8} xl={7} xxl={6}>
+              {this.state.selectedDapp === "Create Pay Group" ? (
+                <>
+                  <CreatePayGroupPage
+                    isLoginComplete={isLoginComplete}
+                    isLoading2Party={this.state.isLoading2Party}
+                    identity={this.state.identity}
+                    identityInfo={this.state.identityInfo}
+                    uniqueName={this.state.uniqueName}
+                    mode={this.state.mode}
+                    //showModal={this.showModal}
 
-                showConfirmCreatePayGroupModal={
-                  this.showConfirmCreatePayGroupModal
-                }
-                accountBalance={this.state.accountBalance}
-                accountHistory={this.state.accountHistory}
-                handleSelectedDapp={this.handleSelectedDapp}
-              />
-            </>
-          ) : (
-            <></>
-          )}
+                    showConfirmCreatePayGroupModal={
+                      this.showConfirmCreatePayGroupModal
+                    }
+                    accountBalance={this.state.accountBalance}
+                    accountHistory={this.state.accountHistory}
+                    handleSelectedDapp={this.handleSelectedDapp}
+                  />
+                </>
+              ) : (
+                <></>
+              )}
+            </Col>
+          </Row>
 
           {this.state.selectedDapp === "PayGroupAcct" ? (
             <>
@@ -8675,35 +8679,45 @@ class App extends React.Component {
             <></>
           )}
 
-          {this.state.selectedDapp === "PayGroupAcctCreatePmt" ? (
-            <>
-              <SlctdPGAcctCreatePmt
-                isLoadingPayGroupAcct={this.state.isLoadingPayGroupAcct}
-                selectedPayGroupAcctIndex={this.state.selectedPayGroupAcctIndex}
-                mnemonic={this.state.mnemonic}
-                identity={this.state.identity}
-                identityInfo={this.state.identityInfo}
-                uniqueName={this.state.uniqueName}
-                mode={this.state.mode}
-                whichNetwork={this.state.whichNetwork}
-                showModal={this.showModal}
-                showConfirmCreatePayInitModal={
-                  this.showConfirmCreatePayInitModal
-                }
-                // handlePayGroupAcctBackArrow={this.handlePayGroupAcctBackArrow}
-                handleSelectedDapp={this.handleSelectedDapp}
-                YourPGsMultiSigUTXOs={this.state.YourPGsMultiSigUTXOs}
-                selectedPayGroupDoc={this.state.selectedPayGroupDoc}
-                selectedPayGroupNameDocs={this.state.selectedPayGroupNameDocs}
-                selectedPayGroupMbrDocs={this.state.selectedPayGroupMbrDocs}
-                selectedPayGroupECDHDocs={this.state.selectedPayGroupECDHDocs}
+          <Row className="justify-content-md-center">
+            <Col md={9} lg={8} xl={7} xxl={6}>
+              {this.state.selectedDapp === "PayGroupAcctCreatePmt" ? (
+                <>
+                  <SlctdPGAcctCreatePmt
+                    isLoadingPayGroupAcct={this.state.isLoadingPayGroupAcct}
+                    selectedPayGroupAcctIndex={
+                      this.state.selectedPayGroupAcctIndex
+                    }
+                    mnemonic={this.state.mnemonic}
+                    identity={this.state.identity}
+                    identityInfo={this.state.identityInfo}
+                    uniqueName={this.state.uniqueName}
+                    mode={this.state.mode}
+                    whichNetwork={this.state.whichNetwork}
+                    showModal={this.showModal}
+                    showConfirmCreatePayInitModal={
+                      this.showConfirmCreatePayInitModal
+                    }
+                    // handlePayGroupAcctBackArrow={this.handlePayGroupAcctBackArrow}
+                    handleSelectedDapp={this.handleSelectedDapp}
+                    YourPGsMultiSigUTXOs={this.state.YourPGsMultiSigUTXOs}
+                    selectedPayGroupDoc={this.state.selectedPayGroupDoc}
+                    selectedPayGroupNameDocs={
+                      this.state.selectedPayGroupNameDocs
+                    }
+                    selectedPayGroupMbrDocs={this.state.selectedPayGroupMbrDocs}
+                    selectedPayGroupECDHDocs={
+                      this.state.selectedPayGroupECDHDocs
+                    }
 
-                //
-              />
-            </>
-          ) : (
-            <></>
-          )}
+                    //
+                  />
+                </>
+              ) : (
+                <></>
+              )}
+            </Col>
+          </Row>
 
           {this.state.selectedDapp === "ComingSoonPage" ? (
             <>
