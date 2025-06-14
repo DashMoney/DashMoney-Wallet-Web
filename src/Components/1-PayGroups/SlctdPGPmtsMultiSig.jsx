@@ -82,7 +82,8 @@ class SlctdPGPmtsMultisig extends React.Component {
     }
     if (ismbrDoc === "Error2") {
       // console.log("Failed on Decrypt Error");
-      return <Badge bg="danger">Error2</Badge>;
+      return <Badge bg="warning">Awaiting</Badge>;
+      // return <Badge bg="danger">Error2</Badge>;
     }
     if (ismbrDoc === "Error3") {
       // console.log("Failed on Decrypt Error");
@@ -163,7 +164,7 @@ class SlctdPGPmtsMultisig extends React.Component {
     if (this.props.selectedPayGroupDoc.scripts === "") {
       yourScriptAddr = "Awaiting";
     } else if (
-      this.props.selectedPayGroupDoc.scripts.pub[this.props.scriptKey][0] ===
+      this.props.selectedPayGroupDoc.scripts.pub[this.props.scriptKey] ===
       undefined
     ) {
       yourScriptAddr = "Awaiting";
@@ -235,7 +236,7 @@ class SlctdPGPmtsMultisig extends React.Component {
         ismbrDocVerified = undefined;
       } else if (mbrDoc.scripts === "") {
         ismbrDocVerified = "Error1";
-      } else if (mbrDoc.scripts.pub[this.props.scriptKey][0] === undefined) {
+      } else if (mbrDoc.scripts.pub[this.props.scriptKey] === undefined) {
         ismbrDocVerified = "Error2";
       } else if (
         builtScriptAddr === mbrDoc.scripts.pub[this.props.scriptKey][0]
@@ -289,7 +290,7 @@ class SlctdPGPmtsMultisig extends React.Component {
       let mbrDoc = mbrDocs.find((doc) => {
         if (doc.scripts === "") {
           return false;
-        } else if (doc.scripts.pub[this.props.scriptKey][0] === undefined) {
+        } else if (doc.scripts.pub[this.props.scriptKey] === undefined) {
           return false;
         } else if (
           builtScriptAddr === doc.scripts.pub[this.props.scriptKey][0]
