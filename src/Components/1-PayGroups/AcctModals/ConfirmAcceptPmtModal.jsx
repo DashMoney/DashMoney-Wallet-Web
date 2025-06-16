@@ -164,11 +164,11 @@ class ConfirmAcceptPmtModal extends React.Component {
             <>
               {this.state.loadTime >= 1 ? (
                 <Button variant="primary" disabled>
-                  <b>Start Payment ({this.state.loadTime})</b>
+                  <b>Sign Payment ({this.state.loadTime})</b>
                 </Button>
               ) : (
                 <Button variant="primary" onClick={this.handleSubmitClick}>
-                  <b>Start Payment</b>
+                  <b>Sign Payment</b>
                 </Button>
               )}
             </>

@@ -276,6 +276,24 @@ class SlctdPGAcctPmt extends React.Component {
       }
     );
 
+    let areUTXOsAvail = true;
+
+    this.props.payInitDoc.txData.utxos.forEach((utxoSimplified) => {
+      //txid: utxo.txid, outputIndex: utxo.outputIndex
+      let fullUTXO = this.props.YourPGsMultiSigUTXOs.find((fullUTXO) => {
+        return (
+          fullUTXO.txid === utxoSimplified.txid &&
+          fullUTXO.outputIndex === utxoSimplified.outputIndex
+        );
+      });
+
+      if (fullUTXO === undefined) {
+        areUTXOsAvail = false;
+      }
+    });
+
+    //
+
     let isTxComplete = false;
 
     availMbrPayDocs.forEach((payDoc) => {
@@ -394,7 +412,8 @@ class SlctdPGAcctPmt extends React.Component {
           ) : (
             <>
               {isPaymentReadyToBroadcast &&
-              yourPaymentDoc.status === "Signed" ? (
+              yourPaymentDoc.status === "Signed" &&
+              areUTXOsAvail ? (
                 <>
                   <div className="d-grid gap-2" style={{ margin: "1rem" }}>
                     <Button
@@ -413,28 +432,43 @@ class SlctdPGAcctPmt extends React.Component {
                 </>
               ) : (
                 <>
-                  {yourPaymentDoc.status === "Not Signed" ? (
+                  {areUTXOsAvail ? (
                     <>
-                      <div className="d-grid gap-2" style={{ margin: "1rem" }}>
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          onClick={() =>
-                            this.props.showConfirmAcceptPmtModal(
-                              this.props.payInitDoc
-                            )
-                          }
-                        >
-                          <b>Sign TX</b>
-                        </Button>
-                      </div>
+                      {yourPaymentDoc.status === "Not Signed" ? (
+                        <>
+                          <div
+                            className="d-grid gap-2"
+                            style={{ margin: "1rem" }}
+                          >
+                            <Button
+                              variant="primary"
+                              size="lg"
+                              onClick={() =>
+                                this.props.showConfirmAcceptPmtModal(
+                                  this.props.payInitDoc
+                                )
+                              }
+                            >
+                              <b>Sign TX</b>
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p //className="textsmaller"
+                            style={{ textAlign: "center" }}
+                          >
+                            ** Waiting for signatures **
+                          </p>
+                        </>
+                      )}
                     </>
                   ) : (
                     <>
                       <p //className="textsmaller"
                         style={{ textAlign: "center" }}
                       >
-                        ** Waiting for signatures **
+                        ** MultiSig UTXOs are unavailable **
                       </p>
                     </>
                   )}
@@ -442,51 +476,6 @@ class SlctdPGAcctPmt extends React.Component {
               )}
             </>
           )}
-
-          {/* {isMultSigReadyToUse ? (
-            <>
-              <div className="d-grid gap-2" style={{ margin: "1rem" }}>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onClick={() =>
-                    this.props.handleGoToPayGroupAcct(this.props.scriptKey)
-                  }
-                >
-                  <b>Payments</b>
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              {acctLabel !== "No Label Found" ? (
-                <>
-                  <div className="d-grid gap-2" style={{ margin: "1rem" }}>
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      onClick={() =>
-                        this.props.showAcceptMultiSigAcctModal(
-                          acctLabel,
-                          this.props.scriptKey
-                        )
-                      }
-                    >
-                      <b>Accept MultiSig</b>
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="d-grid gap-2" style={{ margin: "1rem" }}>
-                    <Button variant="primary" size="lg" disabled>
-                      <b>Accept MultiSig</b>
-                    </Button>
-                  </div>
-                </>
-              )} 
-            </>
-          )}*/}
         </Card.Body>
       </Card>
     );

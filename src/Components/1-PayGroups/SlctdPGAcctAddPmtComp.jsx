@@ -2,6 +2,10 @@ import React from "react";
 //import Badge from "react-bootstrap/Badge";
 import Form from "react-bootstrap/Form";
 
+import handleDenomDisplay from "../UnitDisplay";
+
+import Alert from "react-bootstrap/Alert";
+
 import Button from "react-bootstrap/Button";
 
 class AddPaymentComponent extends React.Component {
@@ -35,6 +39,7 @@ class AddPaymentComponent extends React.Component {
   };
 
   addrValidate = (addrInput) => {
+    //console.log(addrInput);
     //starts with X (mainnet) or Y (Testnet) and is 34 characters in length
     let addrRegex;
     if (this.props.whichNetwork === "testnet") {
@@ -45,6 +50,8 @@ class AddPaymentComponent extends React.Component {
 
     let validAddr = addrRegex.test(addrInput);
 
+    //console.log(validAddr);
+
     if (validAddr) {
       this.setState({
         sendToAddr: addrInput,
@@ -53,14 +60,13 @@ class AddPaymentComponent extends React.Component {
     } else {
       this.setState({
         sendToAddr: addrInput,
-
         addrFormat: false,
       });
     }
   };
 
   numberValidate = (numberInput) => {
-    //console.log(this.props.accountBalance);
+    //console.log(numberInput);
 
     //let regex = /(^[0-9]+[.,]{0,1}[0-9]*$)|(^[.,][0-9]+$)/;
 
@@ -73,7 +79,7 @@ class AddPaymentComponent extends React.Component {
     //console.log(result);
 
     //if (result >= 0 && valid && numberInput > 0) {
-    if (valid && numberInput > 0) {
+    if (valid && Number(numberInput) > 0) {
       this.setState({
         amountToSend: numberInput,
         numberQuantity: true,
@@ -86,26 +92,26 @@ class AddPaymentComponent extends React.Component {
     }
   };
 
-  priceValidate = (price) => {
-    //let regex = /(^[0-9]+[.,]{0,1}[0-9]*$)|(^[.,][0-9]+$)/;
+  // priceValidate = (price) => {
+  //   //let regex = /(^[0-9]+[.,]{0,1}[0-9]*$)|(^[.,][0-9]+$)/;
 
-    let regex = /(^[0-9]+[.,]{0,1}[0-9]{0,5}$)|(^[.,][0-9]{1,5}$)/;
-    //CHANGED TO LIMIT TO minimum mDash possible
+  //   let regex = /(^[0-9]+[.,]{0,1}[0-9]{0,5}$)|(^[.,][0-9]{1,5}$)/;
+  //   //CHANGED TO LIMIT TO minimum mDash possible
 
-    let valid = regex.test(price);
+  //   let valid = regex.test(price);
 
-    if (valid) {
-      this.setState({
-        priceInput: price,
-        validPrice: true,
-      });
-    } else {
-      this.setState({
-        priceInput: price,
-        validPrice: false,
-      });
-    }
-  };
+  //   if (valid) {
+  //     this.setState({
+  //       priceInput: price,
+  //       validPrice: true,
+  //     });
+  //   } else {
+  //     this.setState({
+  //       priceInput: price,
+  //       validPrice: false,
+  //     });
+  //   }
+  // };
 
   submitAndResetForm = () => {
     this.props.addPayment([
@@ -114,6 +120,7 @@ class AddPaymentComponent extends React.Component {
     ]);
 
     document.getElementById("formControlReset").reset();
+
     //   <Form
     //   id="formControlReset"
     //   noValidate
@@ -128,19 +135,20 @@ class AddPaymentComponent extends React.Component {
 
       sendToAddr: "",
       addrFormat: false,
-      //
-      // labelInput: "",
-      // validLabel: false,
-      // //
-      // qtyInput: "",
-      // validQty: true,
-      // //
-      // priceInput: 0,
-      // validPrice: false,
     });
   };
 
   render() {
+    let listofPayouts = this.props.paymentArray.map((tuple, index) => {
+      return (
+        <li key={index}>
+          <p>
+            <b>{handleDenomDisplay(this.props.whichNetwork, tuple[1])}</b> to{" "}
+            <b>{tuple[0]}</b>
+          </p>
+        </li>
+      );
+    });
     return (
       <>
         {/* <Form style={{ marginBottom: "1rem" }}>
@@ -162,35 +170,6 @@ class AddPaymentComponent extends React.Component {
           </div>
         </Form> */}
 
-        {/* <h4 style={{ textDecoration: "underline" }}>Add Variants</h4> */}
-
-        {/* {this.props.paymentArray.length > 0 ? (
-          <></>
-        ) : (
-          <>
-            <p>
-              Use variants to include different variations of the same
-              product.(e.g. Shirt sizes - Large, Medium, and Small)
-            </p>
-          </>
-        )} */}
-
-        {/* {this.props.paymentArray.length > 0 ? (
-          <>
-            <Button
-              onClick={() => this.props.removeFieldOfVariant()}
-              style={{
-                //marginTop: "0.5rem",
-                marginBottom: "1rem",
-              }}
-            >
-              Remove
-            </Button>
-          </>
-        ) : (
-          <></>
-        )} */}
-
         <div id="sidetextonlysides">
           {/* BELOW IS EXCHANGE FORM TABS -> CHANGE TO PAY AND REQUEST */}
 
@@ -200,25 +179,21 @@ class AddPaymentComponent extends React.Component {
             id="formControlReset"
             noValidate
             //onSubmit={this.submitAndResetForm}
-            onChange={this.onChange}
+            //onChange={this.onChange}
           >
-            {/* <Form
-              id="Pay-to-Addr-form"
-              noValidate
-              onSubmit={this.handleVerifyClick}
-              onChange={this.onChange}
-            > */}
             <Form.Group className="mb-3" controlId="validationCustomAddr">
               <Form.Label>Send Dash to Address:</Form.Label>
 
               {/* <Form.Label>Send Dash to:</Form.Label> */}
 
               <Form.Control
+                onChange={this.onChange}
                 type="text"
                 placeholder="Enter address here.."
-                defaultValue={this.state.sendToAddr}
-                // required
+                value={this.state.sendToAddr}
+                //required
                 isValid={this.state.addrFormat}
+                //isInvalid={!this.state.addrFormat}
               />
 
               {/* type="text"
@@ -232,9 +207,12 @@ class AddPaymentComponent extends React.Component {
               <Form.Label>Amount to Send (in Dash)</Form.Label>
 
               <Form.Control
+                onChange={this.onChange}
                 type="number"
                 placeholder="0.15 for example.."
-                defaultValue={this.state.amountToSend}
+                value={this.state.amountToSend}
+                isValid={this.state.numberQuantity}
+                //isInvalid={!this.state.numberQuantity}
                 // required
               />
 
@@ -248,10 +226,11 @@ class AddPaymentComponent extends React.Component {
             /> */}
             </Form.Group>
           </Form>
-          {this.props.paymentArray.length <= 7 &&
+          {this.props.paymentArray.length <= 9 &&
           this.state.addrFormat &&
           this.state.numberQuantity &&
-          !this.props.exceedsWalletAmt ? ( //&&
+          !this.props.exceedsWalletAmt &&
+          this.props.isUniquePayouts ? ( //&&
             //!this.props.isLoadingForm_WALLET
             <>
               <p> </p>
@@ -285,18 +264,50 @@ class AddPaymentComponent extends React.Component {
           )}
         </div>
 
-        {/* <div
-          className="BottomBorder"
-          style={{ paddingTop: ".2rem", marginBottom: ".3rem" }}
-        ></div> */}
-
-        {this.props.paymentArray.length > 7 ? (
+        {this.props.paymentArray.length > 8 ? (
           <>
-            <p className="textsmaller">(Limit of 8 Payouts)</p>
+            <p className="textsmaller">(Limit of 9 Payouts)</p>
           </>
         ) : (
           <></>
         )}
+
+        <p></p>
+        {this.props.paymentArray.length === 0 ? (
+          <>
+            {" "}
+            <p
+              //className="smallertext"
+              //style={{ color: "red", marginTop: ".2rem" }}
+              style={{ textAlign: "center" }}
+            >
+              <b>Payments added will appear here.</b>
+            </p>
+          </>
+        ) : (
+          <>
+            {" "}
+            <div className="indentStuff">
+              {/* <h4>
+                  <b>Payouts</b>
+                </h4> */}
+              <p></p>
+              <Alert
+                variant="primary"
+
+                //dismissible
+              >
+                <Alert.Heading>Payouts</Alert.Heading>
+                <ul>{listofPayouts}</ul>
+              </Alert>
+            </div>
+          </>
+        )}
+
+        {/* <div
+          className="BottomBorder"
+          style={{ paddingTop: ".2rem", marginBottom: ".3rem" }}
+        ></div> */}
       </>
     );
   }

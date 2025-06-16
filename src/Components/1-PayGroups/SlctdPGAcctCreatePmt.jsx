@@ -61,17 +61,6 @@ class SlctdPGAcctCreatePmt extends React.Component {
   render() {
     //MAKE THIS A LIST OF PAYMENT ADDRS AND AMTS ->
 
-    let listofPayouts = this.state.paymentArray.map((tuple, index) => {
-      return (
-        <li key={index}>
-          <p>
-            <b>{handleDenomDisplay(this.props.whichNetwork, tuple[1])}</b> to{" "}
-            <b>{tuple[0]}</b>
-          </p>
-        </li>
-      );
-    });
-
     let payoutTotal = 0;
 
     this.state.paymentArray.forEach((tuple) => {
@@ -120,16 +109,17 @@ class SlctdPGAcctCreatePmt extends React.Component {
       });
     }
 
-    let uniquePayouts = true;
+    let isUniquePayouts = true;
 
     if (this.state.paymentArray.length > 1) {
       let uniquePayouts = this.state.paymentArray.map((pay) => pay[0]);
+      //console.log(uniquePayouts);
       let setOfUniquePayouts = [...new Set(uniquePayouts)];
-
+      //console.log(setOfUniquePayouts);
       if (uniquePayouts.length === setOfUniquePayouts.length) {
-        uniquePayouts = true;
+        isUniquePayouts = true;
       } else {
-        uniquePayouts = false;
+        isUniquePayouts = false;
       }
     }
 
@@ -195,10 +185,11 @@ class SlctdPGAcctCreatePmt extends React.Component {
             removePayment={this.removePayment}
             addPayment={this.addPayment}
             exceedsWalletAmt={exceedsWalletAmt}
+            isUniquePayouts={isUniquePayouts}
           />
           <p></p>
 
-          {!uniquePayouts ? (
+          {!isUniquePayouts ? (
             <>
               <p
                 style={{ color: "red", textAlign: "center" }}
@@ -211,73 +202,15 @@ class SlctdPGAcctCreatePmt extends React.Component {
             <></>
           )}
 
-          {/* {exceedsWalletAmt ? (
-            <>
-              <p
-                style={{ color: "red", textAlign: "center" }}
-                className="smallertext"
-              >
-                Payment exceeds amount in MultiSig.
-              </p>
-            </>
-          ) : (
-            <></>
-          )} */}
-
           {/* **** ^^^^ FORMS AND INFO ^^^^ **** */}
 
-          {this.state.paymentArray.length === 9 ? (
+          {/* {this.state.paymentArray.length === 8 ? (
             <>
-              <p className="textsmaller">(Limit of 10 payments for testnet)</p>
-            </>
-          ) : (
-            <></>
-          )}
-          {/* MY SERIES OF ALERTS FOR ERRORS AND NO NAME AND NOT DGM DOC */}
-
-          {/* {this.state.alreadyMember ? (
-            <>
-              <p></p>
-              <Alert variant="danger" dismissible>
-                <Alert.Heading>Duplicate Member - Alert</Alert.Heading>
-                <p>This person is already a member of the Pay Group.</p>
-              </Alert>
+              <p className="textsmaller">(Limit of 8 payments for testnet)</p>
             </>
           ) : (
             <></>
           )} */}
-
-          <p></p>
-          {this.state.paymentArray.length === 0 ? (
-            <>
-              {" "}
-              <p
-                //className="smallertext"
-                //style={{ color: "red", marginTop: ".2rem" }}
-                style={{ textAlign: "center" }}
-              >
-                <b>Payments added will appear here.</b>
-              </p>
-            </>
-          ) : (
-            <>
-              {" "}
-              <div className="indentStuff">
-                {/* <h4>
-                  <b>Payouts</b>
-                </h4> */}
-                <p></p>
-                <Alert
-                  variant="primary"
-
-                  //dismissible
-                >
-                  <Alert.Heading>Payouts</Alert.Heading>
-                  <ul>{listofPayouts}</ul>
-                </Alert>
-              </div>
-            </>
-          )}
 
           {this.state.paymentArray.length > 0 ? (
             <>
@@ -296,8 +229,9 @@ class SlctdPGAcctCreatePmt extends React.Component {
           )}
 
           {this.state.paymentArray.length > 0 &&
-          this.state.paymentArray.length <= 7 &&
-          !exceedsWalletAmt ? (
+          this.state.paymentArray.length < 9 &&
+          !exceedsWalletAmt &&
+          isUniquePayouts ? (
             <div className="d-grid gap-2" style={{ margin: "1rem" }}>
               <Button
                 variant="primary"
@@ -314,8 +248,9 @@ class SlctdPGAcctCreatePmt extends React.Component {
           )}
 
           {this.state.paymentArray.length == 0 ||
-          this.state.paymentArray.length > 8 ||
-          exceedsWalletAmt ? (
+          this.state.paymentArray.length >= 9 ||
+          exceedsWalletAmt ||
+          !isUniquePayouts ? (
             <div className="d-grid gap-2" style={{ margin: "1rem" }}>
               <Button variant="primary" disabled size="lg">
                 <b>Start Payment</b>

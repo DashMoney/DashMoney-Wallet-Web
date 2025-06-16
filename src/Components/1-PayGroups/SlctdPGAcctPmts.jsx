@@ -58,24 +58,11 @@ class SlctdPGAcctPmts extends React.Component {
 
     console.log("selectedPayInitPayments: ", selectedPayInitPayments);
 
-    /*
-   
+    let orderedPayInits = selectedPayInitPayments.sort(function (a, b) {
+      return b.$updatedAt - a.$updatedAt;
+    });
 
-    Then For each PayInit pass to AcctPmt Card
-
-        AcctPmt Card will sort PayDocs and Display Data
-
-        Signed or Not Signed
-
-        Then add Signature button
-
-        and when enough -> Broadcast TX
-        
-
-     * 
-     */
-
-    let payments = selectedPayInitPayments.map((payInitDoc, index) => {
+    let payments = orderedPayInits.map((payInitDoc, index) => {
       //console.log(yourPGDoc);
       return (
         <Col key={index} lg={6}>

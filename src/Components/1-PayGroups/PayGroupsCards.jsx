@@ -40,7 +40,12 @@ class PayGroupsCards extends React.Component {
 
     let payGroup = [];
 
-    payGroup = this.props.YourPayGroups.map((yourPGDoc, index) => {
+    // //need to order the PayGroups ->
+    let orderedPayGroups = this.props.YourPayGroups.sort(function (a, b) {
+      return b.$updatedAt - a.$updatedAt;
+    });
+
+    payGroup = orderedPayGroups.map((yourPGDoc, index) => {
       //console.log(yourPGDoc);
       return (
         <Col key={index} lg={6}>

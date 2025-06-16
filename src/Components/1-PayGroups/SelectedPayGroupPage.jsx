@@ -236,6 +236,7 @@ class SelectedPayGroupPage extends React.Component {
                     today={today}
                     yesterday={yesterday}
                     identity={this.props.identity}
+                    mode={this.props.mode}
                     chatMsgs={chatMsgs}
                     likeTuples={likeTuples}
                     theSecret={sharedChatKey}

@@ -35,9 +35,15 @@ class SelectedPayGroupMsg extends React.Component {
   };
 
   handleTextClick = () => {
-    this.setState({
-      clickText: true,
-    });
+    if (this.state.clickText) {
+      this.setState({
+        clickText: false,
+      });
+    } else {
+      this.setState({
+        clickText: true,
+      });
+    }
   };
 
   handleLikeDisplay = () => {
@@ -46,6 +52,13 @@ class SelectedPayGroupMsg extends React.Component {
   };
 
   render() {
+    let likeVariant = "outline-dark";
+
+    if (this.props.mode === "primary") {
+      likeVariant = "outline-dark";
+    } else {
+      likeVariant = "outline-light";
+    }
     //theMsg, theLikes
 
     const theMsg = this.props.msg;
@@ -122,11 +135,11 @@ class SelectedPayGroupMsg extends React.Component {
             <>
               <OverlayTrigger
                 placement="right"
-                delay={{ show: 250, hide: 400 }}
+                delay={{ show: 200, hide: 400 }}
                 overlay={renderTooltip}
               >
                 <Button
-                  variant="outline-dark"
+                  variant={likeVariant}
                   style={{
                     marginLeft: "1rem",
                     paddingTop: "0rem",
@@ -176,11 +189,11 @@ class SelectedPayGroupMsg extends React.Component {
                 <>
                   <OverlayTrigger
                     placement="right"
-                    delay={{ show: 250, hide: 400 }}
+                    delay={{ show: 200, hide: 400 }}
                     overlay={renderTooltip}
                   >
                     <Button
-                      variant="outline-dark"
+                      variant={likeVariant}
                       style={{
                         marginLeft: "1rem",
                         paddingTop: "0rem",
@@ -194,28 +207,28 @@ class SelectedPayGroupMsg extends React.Component {
                 </>
               ) : (
                 <>
-                  <OverlayTrigger
-                    placement="right"
-                    delay={{ show: 250, hide: 400 }}
-                    overlay={renderTooltip}
-                  >
-                    <Button
-                      variant="outline-dark"
-                      style={{
-                        marginLeft: "1rem",
-                        paddingTop: "0rem",
-                        paddingBottom: "0.1rem",
-                      }}
-                      onClick={() =>
-                        this.props.showAddLikeToChatDocModal(
-                          theMsg,
-                          this.props.theSecret
-                        )
-                      }
-                    >
-                      <BiLike size={22} /> <span>{likeCount}</span>
-                    </Button>
-                  </OverlayTrigger>
+                  {likeCount === 0 && this.state.clickText ? (
+                    <>
+                      <Button
+                        variant={likeVariant}
+                        style={{
+                          marginLeft: "1rem",
+                          paddingTop: "0rem",
+                          paddingBottom: "0.1rem",
+                        }}
+                        onClick={() =>
+                          this.props.showAddLikeToChatDocModal(
+                            theMsg,
+                            this.props.theSecret
+                          )
+                        }
+                      >
+                        <BiLike size={22} /> <span>{likeCount}</span>
+                      </Button>
+                    </>
+                  ) : (
+                    <></>
+                  )}
                 </>
               )}
             </>

@@ -110,6 +110,7 @@ class SelectedPayGroupMsgs extends React.Component {
           likeObjsArray={likeObjsArray}
           yourLikes={this.props.yourLikes}
           key={index}
+          mode={this.props.mode}
           index={index}
           uniqueName={this.props.uniqueName}
           today={this.props.today}
